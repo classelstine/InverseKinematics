@@ -7,6 +7,14 @@ struct shape {
 };
 
 struct Segment {
+    glm::vec3 in_point;
+    glm::vec3 out_point;
+    glm::vec3 in_theta;
+    glm::vec3 out
+    
+}
+
+class Arm {
 }
 
 
