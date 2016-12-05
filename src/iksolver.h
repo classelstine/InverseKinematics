@@ -1,45 +1,62 @@
 using namespace std;
-#include <Eigen/Dense>
-glm::vec3 goal_pos;
+using namespace Eigen;
 
+#include <Eigen>
+
+#define NULL nullptr; 
 
 class Segment {
     Segment parent;
     Segment child;
-    glm::vec3 in_joint;
-    glm::vec3 out_joint;
-    glm::vec3 in_theta;
+    Vector3f in_joint;
+    Vector3f out_joint;
+    Vector3f in_theta;
     float length;
 
     Segment () {
-        in_joint = glm::vec3(0,0,0): 
-        out_joint = glm::vec3(0,0,0): 
+        in_theta = Vector3f(0,0,0);
         length = 1; 
+        parent = NULL;
+        child = NULL;
     } 
-    
-}
+
+    void set_child(Segment _child) { 
+        this.child = _child;
+        _child.parent = this; 
+    } 
+};
 
 class Arm {
     public:
         Segment root;
+        unsigned int num_segments; 
+        float end_effector; 
     
     //Default 4 segments
     Arm() { 
-        root = Segment 
+        root = Segment();  
+        child1 = Segment();  
+        child2 = Segment();  
+        child3 = Segment();  
+
+        root.set_child(child1);
+        child1.set_child(child2);
+        child2.set_child(child3);
+
+        calc_new_pi();
     }
+    void calc_new_pi(void); 
+    Matrix4f get_jacobian(void);
+    Matrix4f get_dr(Matrix4f jacobian, float step);
+    void update_rotations(Matrix4f dr);
         
-}
+};
 
-
-
-
-bool close_enough(glm::vec3 p1, glm::vec3] p2, float epsilon);
+bool close_enough(Vector3f end_effector, Vector3f goal, float epsilon);
 void initialize_goal(void);
 void update_goal(float path_mode);
-void initialize_arm(void);
 void render(void);
 float update_position(float epsilon, float step_size);
-glm::mat4 getJacobian(
 
 
 
