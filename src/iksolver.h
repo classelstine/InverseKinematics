@@ -1,29 +1,28 @@
+#include "Eigen/Dense"
+
 using namespace std;
 using namespace Eigen;
 
-#include <Eigen>
-
-#define NULL nullptr; 
-
 class Segment {
-    Segment parent;
-    Segment child;
-    Vector3f in_joint;
-    Vector3f out_joint;
-    Vector3f in_theta;
-    float length;
+    public:
+        Segment *parent;
+        Segment *child;
+        Vector3f in_joint;
+        Vector3f out_joint;
+        Vector3f in_theta;
+        float length;
 
-    Segment () {
-        in_theta = Vector3f(0,0,0);
-        length = 1; 
-        parent = NULL;
-        child = NULL;
-    } 
+        Segment (void) {
+            in_theta = Vector3f(0,0,0);
+            length = 1; 
+            parent = NULL;
+            child = NULL;
+        } 
 
-    void set_child(Segment _child) { 
-        this.child = _child;
-        _child.parent = this; 
-    } 
+        void set_child(Segment *_child) { 
+            this->child = _child;
+            _child->parent = this; 
+        } 
 };
 
 class Arm {
@@ -35,13 +34,13 @@ class Arm {
     //Default 4 segments
     Arm() { 
         root = Segment();  
-        child1 = Segment();  
-        child2 = Segment();  
-        child3 = Segment();  
+        Segment *child1 = new Segment();  
+        Segment *child2 = new Segment();  
+        Segment *child3 = new Segment();  
 
         root.set_child(child1);
-        child1.set_child(child2);
-        child2.set_child(child3);
+        child1->set_child(child2);
+        child2->set_child(child3);
 
         calc_new_pi();
     }

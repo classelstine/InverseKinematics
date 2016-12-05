@@ -11,7 +11,8 @@
 #include <fstream> 
 #include <sstream>
 #include <string> 
-#include "example_03.h"
+#include "iksolver.h"
+
 #ifdef _WIN32
 static DWORD lastTime;
 #else
@@ -36,7 +37,7 @@ int Width_global = 400;
 int Height_global = 400;
 int Z_buffer_bit_depth = 128;
 vector< vector < vector < glm::vec3>>> patches; // Patches data structure [# patches][4][4][xyz point]
-vector<shape> shapes; // Shapes (either triangle or quad)
+//vector<shape> shapes; // Shapes (either triangle or quad)
 bool is_adaptive = false; // adaptive or uniform subdivision
 bool is_smooth_shade = true; // If not smooth, then flat shading
 float step_size;
@@ -141,6 +142,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     
 }
 
+/*
 void drawShapes(){
     if (is_adaptive) {
         glBegin(GL_TRIANGLES) ;
@@ -158,6 +160,7 @@ void drawShapes(){
     }
     glEnd();
 }
+*/
 
 //****************************************************
 // function that does the actual drawing of stuff
@@ -184,7 +187,7 @@ void display( GLFWwindow* window )
     glRotatef(rotation[2], 0.0f, 0.0f, 1.0f);
     
     //drawCube(); // REPLACE ME!
-    drawShapes();
+    //drawShapes();
 
     glPopMatrix();
 
@@ -268,12 +271,10 @@ int main(int argc, char *argv[]) {
     if (argc < 3) { 
         cout << "ERROR: INVALID PROGRAM PARAMETERS" << endl; 
     } else if (argc == 3) { 
-        parse_file(argv[1]); 
         is_adaptive = false;
         step_size = atof(argv[2]);  
         num_steps = ceil(1.0f/step_size); 
     } else if (argc == 4) { 
-        parse_file(argv[1]); 
         epsilon = atof(argv[2]);  
         is_adaptive = true;
     } 
@@ -283,7 +284,7 @@ int main(int argc, char *argv[]) {
             } 
         } 
     } 
-    create_shapes();
+    //create_shapes();
 
     while( !glfwWindowShouldClose( window ) ) // infinite loop to draw object again and again
     {   // because once object is draw then window is terminated
