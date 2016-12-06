@@ -36,23 +36,21 @@ bool auto_strech = false;
 int Width_global = 400;
 int Height_global = 400;
 int Z_buffer_bit_depth = 128;
-vector< vector < vector < glm::vec3>>> patches; // Patches data structure [# patches][4][4][xyz point]
-//vector<shape> shapes; // Shapes (either triangle or quad)
-bool is_adaptive = false; // adaptive or uniform subdivision
-bool is_smooth_shade = true; // If not smooth, then flat shading
 float step_size;
-int num_steps;
 bool wireframe_mode = false;
 float epsilon;
-int total_patches;
 float zoom = 1;
+
+Arm *arm;
+Vector3f goal_position;
 
 inline float sqr(float x) { return x*x; }
 
 
-bool close_enough(glm::vec3 p1, glm::vec3 p2, float epsilon) {
-    float dist = glm::distance(p1, p2); 
-    bool is_close = (dist < epsilon);
+bool close_enough(Vector3f end, Vector3f goal, float epsilon) {
+    Vector3f diff = goal - end;
+    float dist = diff.norm();
+    bool is_close =  (dist < epsilon);
     return is_close;
 }
 
@@ -63,6 +61,21 @@ bool close_enough(glm::vec3 p1, glm::vec3 p2, float epsilon) {
 void initializeRendering()
 {
     glfwInit();
+}
+
+void initialize_goal(void) {
+    goal_position = Vector3f(1.0, 1.0, 1.0);
+}
+
+void update_goal(int mode) {
+    switch (mode) {
+        case 0: break;
+    }
+}
+
+float update_position(float epsilon, float step_size) {
+    float error = 0;
+    return error;
 }
 
 
@@ -122,14 +135,6 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
                 }
             }
             break;
-        case GLFW_KEY_F :
-            if (action && mods == GLFW_MOD_SHIFT) auto_strech = !auto_strech; break;
-        case GLFW_KEY_S : 
-            if (action) is_smooth_shade = !is_smooth_shade;
-            break;
-        case GLFW_KEY_W : 
-            if (action) wireframe_mode = !wireframe_mode;
-            break;
         case GLFW_KEY_EQUAL: 
             if (action) translation[2] += 0.1f;
             break;
@@ -140,6 +145,13 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         default: break;
     }
     
+}
+// ***********************
+//    RENDER FUNCTION
+// Given current global Arm, 
+// render it to the display
+// ***********************
+void render(void) {
 }
 
 /*
@@ -162,6 +174,7 @@ void drawShapes(){
 }
 */
 
+
 //****************************************************
 // function that does the actual drawing of stuff
 //***************************************************
@@ -181,28 +194,14 @@ void display( GLFWwindow* window )
     
     //glOrtho(0*zoom, Width_global*zoom, 0*zoom, Height_global*zoom, 1, -1);
     glPushMatrix();
-    glTranslatef (translation[0], translation[1], translation[2]);
-    glRotatef(rotation[0], 1.0f, 0.0f, 0.0f);
-    glRotatef(rotation[1], 0.0f, 1.0f, 0.0f);
-    glRotatef(rotation[2], 0.0f, 0.0f, 1.0f);
     
     //drawCube(); // REPLACE ME!
     //drawShapes();
+    render();
 
     glPopMatrix();
 
-    if (wireframe_mode) {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    } else {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    }
-
-    if (is_smooth_shade) {
-        glShadeModel(GL_SMOOTH);
-    } else {
-        glShadeModel(GL_FLAT);
-    }
-    
+ 
     glfwSwapBuffers(window);
 
 
@@ -271,24 +270,23 @@ int main(int argc, char *argv[]) {
     if (argc < 3) { 
         cout << "ERROR: INVALID PROGRAM PARAMETERS" << endl; 
     } else if (argc == 3) { 
-        is_adaptive = false;
-        step_size = atof(argv[2]);  
-        num_steps = ceil(1.0f/step_size); 
     } else if (argc == 4) { 
         epsilon = atof(argv[2]);  
-        is_adaptive = true;
-    } 
-    for (int i = 0; i < total_patches; i++) { 
-        for (int j = 0; j < 4; j++) { 
-            for (int k = 0; k < 4; k++) { 
-            } 
-        } 
     } 
     //create_shapes();
+    
+    int path_mode = 0;
+    initialize_goal();
+    arm = new Arm();
+    epsilon = 0.05;
+    step_size = 0.5;
+
 
     while( !glfwWindowShouldClose( window ) ) // infinite loop to draw object again and again
     {   // because once object is draw then window is terminated
         display( window );
+        update_goal(path_mode);
+        update_position(epsilon, step_size);
         
         if (auto_strech){
             glfwSetWindowSize(window, mode->width, mode->height);
