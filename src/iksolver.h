@@ -29,7 +29,6 @@ class Arm {
     public:
         Segment root;
         unsigned int num_segments; 
-        float end_effector; 
     void calc_new_pi(void); 
     //Default 4 segments
     Arm() { 
@@ -47,6 +46,8 @@ class Arm {
     Matrix4f get_jacobian(void);
     Matrix4f get_dr(Matrix4f jacobian, float step);
     void update_rotations(Matrix4f dr);
+    Vector3f get_end_effector(void);
+    float update_position(float epsilon, float step_size);
         
 };
 
@@ -58,7 +59,6 @@ bool close_enough(Vector3f end_effector, Vector3f goal, float epsilon);
 void initialize_goal(void);
 void update_goal(int path_mode);
 void render(void);
-float update_position(float epsilon, float step_size);
 
 
 

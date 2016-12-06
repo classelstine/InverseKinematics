@@ -73,10 +73,53 @@ void update_goal(int mode) {
     }
 }
 
-float update_position(float epsilon, float step_size) {
-    float error = 0;
+//****************************************************
+// A routine that updates the position of the end effector and 
+// returns how far it is away from the goal position. 
+//****************************************************
+float Arm::update_position(float epsilon, float step_size) {
+    Vector3f end_effector = arm->get_end_effector();
+    float error;
+    if(close_enough(end_effector, goal_position, epsilon)) { 
+        error = (end_effector - goal_position).norm();
+        return error; 
+    } 
+    
+    Matrix4f jacobian = arm->get_jacobian(); 
+    Matrix4f dr = arm->get_dr(jacobian, step_size);
+    arm->update_rotations(dr);
+    arm->calc_new_pi();
+    end_effector = arm->get_end_effector();
+    error = (end_effector - goal_position).norm();
     return error;
+} 
+
+Matrix4f Arm::get_jacobian(void) {
+    Matrix4f J;
+    J << 1, 0, 0, 0,
+      0, 1, 0, 0, 
+      0, 0, 1, 0,
+      0, 0, 0, 1;
+    return J;
 }
+
+Matrix4f Arm::get_dr(Matrix4f jacobian, float step) {
+    Matrix4f dr;
+    dr << 1, 0, 0, 0,
+      0, 1, 0, 0, 
+      0, 0, 1, 0,
+      0, 0, 0, 1;
+    return dr;
+}
+
+void Arm::update_rotations(Matrix4f dr) {
+}
+
+Vector3f Arm::get_end_effector(void){
+    Vector3f end = root.child->child->child->out_joint;
+    return end;
+}
+
 
 
 //****************************************************
@@ -84,6 +127,7 @@ float update_position(float epsilon, float step_size) {
 // general purpose routine as it assumes a lot of stuff specific to
 // this example.
 //****************************************************
+
 void setPixel(float x, float y, GLfloat r, GLfloat g, GLfloat b) {
     glColor3f(r, g, b);
     glVertex2f(x+0.5, y+0.5);  // The 0.5 is to target pixel centers
@@ -286,7 +330,7 @@ int main(int argc, char *argv[]) {
     {   // because once object is draw then window is terminated
         display( window );
         update_goal(path_mode);
-        update_position(epsilon, step_size);
+        arm->update_position(epsilon, step_size);
         
         if (auto_strech){
             glfwSetWindowSize(window, mode->width, mode->height);
