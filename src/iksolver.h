@@ -27,19 +27,29 @@ class Segment {
 
 class Arm {
     public:
-        Segment root;
+        Segment *root;
+        Vector3f origin;
         unsigned int num_segments; 
     void calc_new_pi(void); 
     //Default 4 segments
     Arm() { 
-        root = Segment();  
+        root = new Segment();  
+        origin = Vector3f(0.0,0.0,5.0); 
         Segment *child1 = new Segment();  
         Segment *child2 = new Segment();  
         Segment *child3 = new Segment();  
 
-        root.set_child(child1);
+        root->set_child(child1);
         child1->set_child(child2);
         child2->set_child(child3);
+
+        Segment *curr = root;
+        float length = 0.5;
+        while(curr) { 
+            curr->out_joint = Vector3f(length,0.0,5.0);
+            length += 0.5;
+            curr = curr->child;
+        } 
 
         calc_new_pi();
     }

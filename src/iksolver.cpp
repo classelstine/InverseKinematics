@@ -119,7 +119,7 @@ void Arm::update_rotations(Matrix4f dr) {
 }
 
 Vector3f Arm::get_end_effector(void){
-    Vector3f end = root.child->child->child->out_joint;
+    Vector3f end = root->child->child->child->out_joint;
     return end;
 }
 
@@ -199,14 +199,71 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 // render it to the display
 // ***********************
 void render(void) {
-    cout << "1" << endl;
-    glPushMatrix();
-    glColor3f(1,1,1);
+    /*
+    //how to render circle 
+    glColor3f(0,0,1);
     GLUquadric *quad;
     quad = gluNewQuadric();
-    glTranslatef(0,0,0);
-    gluSphere(quad,25,5,5);
+    if( !quad) {
+            cout << "quad didn't initialize" << endl;
+    }
+    gluQuadricNormals(quad, GLU_SMOOTH);
+    gluQuadricTexture(quad, GL_TRUE); 
+    glTranslatef(0,0,4);
+    gluSphere(quad,1.0,18,10);
+    */
+    /*
+    //how to render cylinder 
+    glColor3f(0,1,1);
+    GLUquadric *quad;
+    quad = gluNewQuadric();
+    if( !quad) {
+            cout << "didn't work" << endl;
+    }
+    gluQuadricNormals(quad, GLU_SMOOTH);
+    gluQuadricTexture(quad, GL_TRUE); 
+    glTranslatef(0,2,4);
+    glRotatef(90.0,0.0,0.0,0.0);
+    gluCylinder(quad, 1.0, 1.0, 3, 32, 32);
+    */
+    //now we need to render arm
+    //Render Origin
+    glPushMatrix();
+    GLUquadric *quad;
+    quad = gluNewQuadric();
+    if( !quad) {
+            cout << "quad didn't initialize" << endl;
+    }
+    gluQuadricNormals(quad, GLU_SMOOTH);
+    gluQuadricTexture(quad, GL_TRUE); 
+    float x = arm->origin[0];
+    float y = arm->origin[1];
+    float z = arm->origin[2];
+    cout << "sphere at: " << x << " " << y << " " << z << endl;
+    glTranslatef(x, y, z);
+    gluSphere(quad,1.0,18,10);
     glPopMatrix();
+
+    //Render Rest of Arm
+    //Need to add cylinders
+    Segment *curr_segment = arm->root;
+    while (curr_segment) { 
+        glPushMatrix();
+        quad = gluNewQuadric();
+        if( !quad) {
+                cout << "quad didn't initialize" << endl;
+        }
+        gluQuadricNormals(quad, GLU_SMOOTH);
+        gluQuadricTexture(quad, GL_TRUE); 
+        x = curr_segment->out_joint[0];
+        y = curr_segment->out_joint[1];
+        z = curr_segment->out_joint[2];
+        cout << "sphere at: " << x << " " << y << " " << z << endl;
+        glTranslatef(x, y, z);
+        gluSphere(quad,1.0,18,10);
+        curr_segment = curr_segment->child;
+        glPopMatrix();
+    } 
 }
 
 /*
@@ -238,34 +295,28 @@ void display( GLFWwindow* window )
     //glOrtho(0*zoom, Width_global*zoom, 0*zoom, Height_global*zoom, 1, -1);
     glClearColor( 0.0f, 0.0f, 0.0f, 0.0f ); //clear background screen to black
     GLfloat light_pos[] = {1.0, 2.0, -3.0, 1.0}; 
+    GLfloat ambient_light[] = {0.9, 0.9, 0};
+    GLfloat diffuse_light[] = {0, 0.9, 0.9};
+    glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
+    glEnable(GL_LIGHT1);
+    glShadeModel(GL_SMOOTH);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                // clear the color buffer (sets everything to black)
     glMatrixMode(GL_MODELVIEW);                  // indicate we are specifying camera transformations
     glLoadIdentity();                            // make sure transformation is "zero'd"
     glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse_light);
+    glLightfv(GL_LIGHT1, GL_AMBIENT, ambient_light);
     
     //----------------------- code to draw objects --------------------------
     
     //glOrtho(0*zoom, Width_global*zoom, 0*zoom, Height_global*zoom, 1, -1);
-    glPushMatrix();
     
     //drawCube(); // REPLACE ME!
     //drawShapes();
-    //render();
-    cout << "1" << endl;
-    glColor3f(0,0,1);
-    GLUquadric *quad;
-    quad = gluNewQuadric();
-    if( !quad) {
-            cout << "didn't work" << endl;
-    }
-    gluQuadricNormals(quad, GLU_SMOOTH);
-    gluQuadricTexture(quad, GL_TRUE); 
-    glTranslatef(0,0,4);
-    gluSphere(quad,1.0,32,32);
+    render();
 
-    glPopMatrix();
 
  
     glfwSwapBuffers(window);
