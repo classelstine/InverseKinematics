@@ -1,7 +1,9 @@
 #include <vector>
 #include <iostream>
+#include <exception>
 #include <fstream>
 #include <cmath>
+#include <GL/glew.h> 
 #include <glm/vec3.hpp>
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
@@ -109,6 +111,7 @@ Matrix4f Arm::get_dr(Matrix4f jacobian, float step) {
       0, 1, 0, 0, 
       0, 0, 1, 0,
       0, 0, 0, 1;
+     
     return dr;
 }
 
@@ -196,6 +199,14 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 // render it to the display
 // ***********************
 void render(void) {
+    cout << "1" << endl;
+    glPushMatrix();
+    glColor3f(1,1,1);
+    GLUquadric *quad;
+    quad = gluNewQuadric();
+    glTranslatef(0,0,0);
+    gluSphere(quad,25,5,5);
+    glPopMatrix();
 }
 
 /*
@@ -226,7 +237,7 @@ void display( GLFWwindow* window )
 {
     //glOrtho(0*zoom, Width_global*zoom, 0*zoom, Height_global*zoom, 1, -1);
     glClearColor( 0.0f, 0.0f, 0.0f, 0.0f ); //clear background screen to black
-    GLfloat light_pos[] = {1.0, 2.0, 3.0, 1.0}; 
+    GLfloat light_pos[] = {1.0, 2.0, -3.0, 1.0}; 
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                // clear the color buffer (sets everything to black)
@@ -241,7 +252,18 @@ void display( GLFWwindow* window )
     
     //drawCube(); // REPLACE ME!
     //drawShapes();
-    render();
+    //render();
+    cout << "1" << endl;
+    glColor3f(0,0,1);
+    GLUquadric *quad;
+    quad = gluNewQuadric();
+    if( !quad) {
+            cout << "didn't work" << endl;
+    }
+    gluQuadricNormals(quad, GLU_SMOOTH);
+    gluQuadricTexture(quad, GL_TRUE); 
+    glTranslatef(0,0,4);
+    gluSphere(quad,1.0,32,32);
 
     glPopMatrix();
 
@@ -311,13 +333,6 @@ int main(int argc, char *argv[]) {
     glfwSetWindowSizeCallback(window, size_callback);
     glfwSetKeyCallback(window, key_callback);
 
-    if (argc < 3) { 
-        cout << "ERROR: INVALID PROGRAM PARAMETERS" << endl; 
-    } else if (argc == 3) { 
-    } else if (argc == 4) { 
-        epsilon = atof(argv[2]);  
-    } 
-    //create_shapes();
     
     int path_mode = 0;
     initialize_goal();
