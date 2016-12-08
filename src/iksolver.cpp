@@ -106,12 +106,13 @@ Matrix4f Arm::get_jacobian(void) {
 }
 
 
-Vector3f rotate_vector(Vector3f rot_axis, Vector3f x) { 
-    Vector3f _x;
+Vector3f get_rodriguez(Vector3f rot_axis) { 
     Matrix3f rx;
+    Matrix3f rodriguez;
     float theta = rot_axis.norm(); 
     if (theta == 0) { 
-        return x; 
+        rodriguez = Matrix3f::Identity();
+        return rodriguez; 
     } 
     cout << "theta: " << theta << endl;
     rot_axis.normalize();
@@ -122,8 +123,8 @@ Vector3f rotate_vector(Vector3f rot_axis, Vector3f x) {
     rx << 0, -1*rot_axis[2], rot_axis[1],
           rot_axis[2], 0, -1*rot_axis[0], 
           -1*rot_axis[1], rot_axis[0], 0;
-   _x = (rx*sin(theta) + I + rx*rx*(1-cos(theta)))*x;
-   return _x;
+   rodriguez = rx*sin(theta) + I + rx*rx*(1-cos(theta));
+   return rodriguez;
 } 
 
 Matrix4f Arm::get_dr(Matrix4f jacobian, float step) {
@@ -137,6 +138,22 @@ Matrix4f Arm::get_dr(Matrix4f jacobian, float step) {
 }
 
 void Arm::update_rotations(Matrix4f dr) {
+    Matrix3f compound_rotation = Matrix3f::Identity();
+    Segment *curr_seg = arm->root;
+    while(curr_seg) { 
+        Vector3f rot_vec = curr_seg->r_xyz;
+        Matrix3f ri = get_rodriguez(rot_vec);
+        compound_rotation = compound_rotation*ri;
+        Vector3f li = Vector3f(curr_seg.length, 0, 0);  
+        curr_seg->local_pi = ri*li; 
+        if (!parent) { 
+            curr_seg->world_pi = compound_rotation*li + arm->origin; 
+        }
+        else { 
+            curr_seg->world_pi = compound_rotation*li + curr_seg->parent.world_pi;
+        } 
+        curr_seg = curr_seg->child;
+    } 
 }
 
 Vector3f Arm::get_end_effector(void){

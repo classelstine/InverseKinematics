@@ -7,13 +7,13 @@ class Segment {
     public:
         Segment *parent;
         Segment *child;
-        Vector3f in_joint;
-        Vector3f out_joint;
-        Vector3f in_theta;
+        Vector3f local_pi;
+        Vector3f world_pi;
+        Vector3f r_xyz;
         float length;
 
         Segment (void) {
-            in_theta = Vector3f(0,0,0);
+            r_xyz = Vector3f(0,0,0);
             length = 1; 
             parent = NULL;
             child = NULL;
@@ -61,8 +61,6 @@ class Arm {
         
 };
 
-void Arm::calc_new_pi(void) {
-}
 
 
 bool close_enough(Vector3f end_effector, Vector3f goal, float epsilon);
