@@ -69,6 +69,8 @@ bool close_enough(Vector3f end_effector, Vector3f goal, float epsilon);
 void initialize_goal(void);
 void update_goal(int path_mode);
 void render(void);
+Matrix3f get_rodriguez(Vector3f);
+void print_vec(Vector3f vec);
 
 
 

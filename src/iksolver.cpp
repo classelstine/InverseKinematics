@@ -105,6 +105,27 @@ Matrix4f Arm::get_jacobian(void) {
     return J;
 }
 
+
+Vector3f rotate_vector(Vector3f rot_axis, Vector3f x) { 
+    Vector3f _x;
+    Matrix3f rx;
+    float theta = rot_axis.norm(); 
+    if (theta == 0) { 
+        return x; 
+    } 
+    cout << "theta: " << theta << endl;
+    rot_axis.normalize();
+    cout << "post normalize" << endl;
+    print_vec(rot_axis);
+
+    Matrix3f I = Matrix3f::Identity();
+    rx << 0, -1*rot_axis[2], rot_axis[1],
+          rot_axis[2], 0, -1*rot_axis[0], 
+          -1*rot_axis[1], rot_axis[0], 0;
+   _x = (rx*sin(theta) + I + rx*rx*(1-cos(theta)))*x;
+   return _x;
+} 
+
 Matrix4f Arm::get_dr(Matrix4f jacobian, float step) {
     Matrix4f dr;
     dr << 1, 0, 0, 0,
@@ -239,7 +260,7 @@ void render(void) {
     float x = arm->origin[0];
     float y = arm->origin[1];
     float z = arm->origin[2];
-    cout << "sphere at: " << x << " " << y << " " << z << endl;
+    //cout << "sphere at: " << x << " " << y << " " << z << endl;
     glTranslatef(x, y, z);
     gluSphere(quad,1.0,18,10);
     glPopMatrix();
@@ -258,7 +279,7 @@ void render(void) {
         x = curr_segment->out_joint[0];
         y = curr_segment->out_joint[1];
         z = curr_segment->out_joint[2];
-        cout << "sphere at: " << x << " " << y << " " << z << endl;
+        //cout << "sphere at: " << x << " " << y << " " << z << endl;
         glTranslatef(x, y, z);
         gluSphere(quad,1.0,18,10);
         curr_segment = curr_segment->child;
@@ -341,6 +362,10 @@ void size_callback(GLFWwindow* window, int width, int height)
     display(window);
 }
 
+void print_vec(Vector3f vec) { 
+    cout << vec[0] << " " << vec[1] << " " << vec[2] << endl;
+} 
+
 
 //****************************************************
 // the usual stuff, nothing exciting here
@@ -348,6 +373,13 @@ void size_callback(GLFWwindow* window, int width, int height)
 int main(int argc, char *argv[]) {
     //This initializes glfw
     initializeRendering();
+    Vector3f rot_axis = Vector3f(0.01,0.01,0.01);
+    Vector3f x = Vector3f(5,4,1);
+    cout << "pre rotation: " << endl;
+    print_vec(x);
+    Vector3f new_x = rotate_vector(rot_axis, x);
+    cout << "post rotation: " << endl;
+    print_vec(new_x);
     
     GLFWwindow* window = glfwCreateWindow( Width_global, Height_global, "CS184", NULL, NULL );
     if ( !window )
