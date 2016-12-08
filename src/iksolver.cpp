@@ -326,11 +326,6 @@ void render(void) {
         gluSphere(quad,0.1,18,10);
         glPopMatrix();
 
-        glPushMatrix();
-        quad = gluNewQuadric();
-        gluQuadricNormals(quad, GLU_SMOOTH);
-        gluQuadricTexture(quad, GL_TRUE); 
-        glTranslatef(x,y,z);
         Vector3f prev_point;
         if(curr_segment->parent) {
             prev_point = curr_segment->parent->world_pi;
@@ -340,8 +335,24 @@ void render(void) {
         float rx = curr_segment->world_pi[0] - prev_point[0];
         float ry = curr_segment->world_pi[1] - prev_point[1];
         float rz = curr_segment->world_pi[2] - prev_point[2];
-        glRotatef(-90.0, rx, ry, rz);
-        gluCylinder(quad, 0.05, 0.05, curr_segment->length, 32, 32);
+        if (rz == 0) {
+            rz = 0.001;
+        }
+        Vector3f r = Vector3f(rx, ry, rz);
+        float angle = 57.2957795*acos( rz/r.norm());
+        if (rz < 0.0) {
+            angle = -1 * angle;
+        }
+        float rot_x = -ry*rz;
+        float rot_y = rx*rz;
+        
+        glPushMatrix();
+        quad = gluNewQuadric();
+        gluQuadricNormals(quad, GLU_SMOOTH);
+        gluQuadricTexture(quad, GL_TRUE); 
+        glTranslatef(prev_point[0], prev_point[1], prev_point[2]); 
+        glRotatef(angle, rot_x, rot_y, 0.0);
+        gluCylinder(quad, 0.05, 0.05, r.norm(), 32, 32);
         glPopMatrix();
 
         curr_segment = curr_segment->child;

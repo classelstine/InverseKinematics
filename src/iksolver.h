@@ -13,8 +13,8 @@ class Segment {
         float length;
 
         Segment (void) {
-            r_xyz = Vector3f(0.2,0.9,0.2);
-            length = 0.4; 
+            r_xyz = Vector3f(1.0, 0.5, 0.0);
+            length = 1;
             parent = NULL;
             child = NULL;
         } 
@@ -43,11 +43,11 @@ class Arm {
         child1->set_child(child2);
         child2->set_child(child3);
         Segment *curr = root;
-        float length = 0.1;
+        float length = 1;
         cout << "1" << endl;
         while(curr) { 
             curr->world_pi = Vector3f(length,0.0,5.0);
-            length += 0.1;
+            length += 1;
             curr = curr->child;
         } 
         cout << "2" << endl;
