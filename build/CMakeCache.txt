@@ -207,7 +207,7 @@ CORE_VIDEO_FRAMEWORK:FILEPATH=/System/Library/Frameworks/CoreVideo.framework
 DOXYGEN_EXECUTABLE:FILEPATH=DOXYGEN_EXECUTABLE-NOTFOUND
 
 //Path to a file.
-FREETYPE_INCLUDE_DIR_freetype2:PATH=/usr/local/include/freetype2
+FREETYPE_INCLUDE_DIR_freetype2:PATH=/usr/X11R6/include/freetype2
 
 //Path to a file.
 FREETYPE_INCLUDE_DIR_ft2build:PATH=/usr/local/include/freetype2
@@ -424,7 +424,7 @@ CORE_VIDEO_FRAMEWORK-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: DOXYGEN_EXECUTABLE
 DOXYGEN_EXECUTABLE-ADVANCED:INTERNAL=1
 //Details about finding Freetype
-FIND_PACKAGE_MESSAGE_DETAILS_Freetype:INTERNAL=[/usr/local/lib/libfreetype.dylib][/usr/local/include/freetype2][v2.5.3()]
+FIND_PACKAGE_MESSAGE_DETAILS_Freetype:INTERNAL=[/usr/local/lib/libfreetype.dylib][/usr/local/include/freetype2;/usr/X11R6/include/freetype2][v2.7.0()]
 //Details about finding OpenGL
 FIND_PACKAGE_MESSAGE_DETAILS_OpenGL:INTERNAL=[/System/Library/Frameworks/OpenGL.framework][/System/Library/Frameworks/OpenGL.framework][v()]
 //Details about finding Threads

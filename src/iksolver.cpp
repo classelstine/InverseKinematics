@@ -80,7 +80,7 @@ void update_goal(int mode) {
 // returns how far it is away from the goal position. 
 //****************************************************
 float Arm::update_position(float epsilon, float step_size) {
-    Vector3f end_effector = arm->get_end_effector();
+    Vector3f end_effector = arm->get_end_effector_world();
     float error;
     if(close_enough(end_effector, goal_position, epsilon)) { 
         error = (end_effector - goal_position).norm();
@@ -91,7 +91,7 @@ float Arm::update_position(float epsilon, float step_size) {
     Matrix4f dr = arm->get_dr(jacobian, step_size);
     arm->update_rotations(dr);
     arm->calc_new_pi();
-    end_effector = arm->get_end_effector();
+    end_effector = arm->get_end_effector_world();
     error = (end_effector - goal_position).norm();
     return error;
 } 
@@ -106,7 +106,7 @@ Matrix4f Arm::get_jacobian(void) {
 }
 
 
-Vector3f get_rodriguez(Vector3f rot_axis) { 
+Matrix3f get_rodriguez(Vector3f rot_axis) { 
     Matrix3f rx;
     Matrix3f rodriguez;
     float theta = rot_axis.norm(); 
@@ -137,30 +137,54 @@ Matrix4f Arm::get_dr(Matrix4f jacobian, float step) {
     return dr;
 }
 
-void Arm::update_rotations(Matrix4f dr) {
+void Arm::calc_new_pi(void) {
+    cout << "in calc pi" << endl;
     Matrix3f compound_rotation = Matrix3f::Identity();
-    Segment *curr_seg = arm->root;
+    cout << "1" << endl;
+    Segment *curr_seg = this->root;
+    cout << "2" << endl;
     while(curr_seg) { 
+        cout << "1" << endl;
         Vector3f rot_vec = curr_seg->r_xyz;
+        cout << "2" << endl;
         Matrix3f ri = get_rodriguez(rot_vec);
+        cout << "3" << endl;
         compound_rotation = compound_rotation*ri;
-        Vector3f li = Vector3f(curr_seg.length, 0, 0);  
+        cout << "4" << endl;
+        Vector3f li = Vector3f(curr_seg->length, 0, 0);  
+        cout << "5" << endl;
         curr_seg->local_pi = ri*li; 
-        if (!parent) { 
-            curr_seg->world_pi = compound_rotation*li + arm->origin; 
+        cout << "6" << endl;
+        if (!curr_seg->parent) { 
+            cout << "7" << endl;
+            curr_seg->world_pi = compound_rotation*li + this->origin; 
+            cout << "8" << endl;
         }
         else { 
-            curr_seg->world_pi = compound_rotation*li + curr_seg->parent.world_pi;
+            cout << "9" << endl;
+            curr_seg->world_pi = compound_rotation*li + curr_seg->parent->world_pi;
+            cout << "10" << endl;
         } 
+        cout << "12" << endl;
         curr_seg = curr_seg->child;
+        cout << "11" << endl;
     } 
+    cout << "13" << endl;
 }
 
-Vector3f Arm::get_end_effector(void){
-    Vector3f end = root->child->child->child->out_joint;
+void Arm::update_rotations(Matrix4f dr) { 
+    return;
+} 
+
+Vector3f Arm::get_end_effector_local(void){
+    Vector3f end = root->child->child->child->local_pi;
     return end;
 }
 
+Vector3f Arm::get_end_effector_world(void){
+    Vector3f end = root->child->child->child->local_pi;
+    return end;
+}
 
 
 //****************************************************
@@ -266,20 +290,21 @@ void render(void) {
     */
     //now we need to render arm
     //Render Origin
+    cout << "1" << endl;
     glPushMatrix();
     GLUquadric *quad;
     quad = gluNewQuadric();
     if( !quad) {
             cout << "quad didn't initialize" << endl;
     }
-    gluQuadricNormals(quad, GLU_SMOOTH);
+    gluQuadricNormals(quad, GLU_FLAT);
     gluQuadricTexture(quad, GL_TRUE); 
     float x = arm->origin[0];
     float y = arm->origin[1];
     float z = arm->origin[2];
-    //cout << "sphere at: " << x << " " << y << " " << z << endl;
+    cout << "sphere at: " << x << " " << y << " " << z << endl;
     glTranslatef(x, y, z);
-    gluSphere(quad,1.0,18,10);
+    gluSphere(quad,0.1,18,10);
     glPopMatrix();
 
     //Render Rest of Arm
@@ -293,12 +318,12 @@ void render(void) {
         }
         gluQuadricNormals(quad, GLU_SMOOTH);
         gluQuadricTexture(quad, GL_TRUE); 
-        x = curr_segment->out_joint[0];
-        y = curr_segment->out_joint[1];
-        z = curr_segment->out_joint[2];
-        //cout << "sphere at: " << x << " " << y << " " << z << endl;
+        x = curr_segment->world_pi[0];
+        y = curr_segment->world_pi[1];
+        z = curr_segment->world_pi[2];
+        cout << "sphere at: " << x << " " << y << " " << z << endl;
         glTranslatef(x, y, z);
-        gluSphere(quad,1.0,18,10);
+        gluSphere(quad,0.1,18,10);
         curr_segment = curr_segment->child;
         glPopMatrix();
     } 
@@ -394,10 +419,9 @@ int main(int argc, char *argv[]) {
     Vector3f x = Vector3f(5,4,1);
     cout << "pre rotation: " << endl;
     print_vec(x);
-    Vector3f new_x = rotate_vector(rot_axis, x);
     cout << "post rotation: " << endl;
-    print_vec(new_x);
     
+    cout << "1" << endl;
     GLFWwindow* window = glfwCreateWindow( Width_global, Height_global, "CS184", NULL, NULL );
     if ( !window )
     {
@@ -406,6 +430,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    cout << "2" << endl;
     const GLFWvidmode * mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     if ( !mode )
     {
@@ -414,6 +439,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     
+    cout << "3" << endl;
     glfwMakeContextCurrent( window );
     
     // Get the pixel coordinate of the window
@@ -432,13 +458,14 @@ int main(int argc, char *argv[]) {
     glfwSetWindowTitle(window, "CS184");
     glfwSetWindowSizeCallback(window, size_callback);
     glfwSetKeyCallback(window, key_callback);
+    cout << "4" << endl;
 
     
     int path_mode = 0;
     initialize_goal();
     arm = new Arm();
-    epsilon = 0.05;
-    step_size = 0.5;
+    epsilon = 0.05f;
+    step_size = 0.5f;
 
 
     while( !glfwWindowShouldClose( window ) ) // infinite loop to draw object again and again
