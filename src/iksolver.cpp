@@ -306,7 +306,7 @@ void render(void) {
     glTranslatef(x, y, z);
     gluSphere(quad,0.1,18,10);
     glPopMatrix();
-
+    
     //Render Rest of Arm
     //Need to add cylinders
     Segment *curr_segment = arm->root;
@@ -324,8 +324,27 @@ void render(void) {
         cout << "sphere at: " << x << " " << y << " " << z << endl;
         glTranslatef(x, y, z);
         gluSphere(quad,0.1,18,10);
-        curr_segment = curr_segment->child;
         glPopMatrix();
+
+        glPushMatrix();
+        quad = gluNewQuadric();
+        gluQuadricNormals(quad, GLU_SMOOTH);
+        gluQuadricTexture(quad, GL_TRUE); 
+        glTranslatef(x,y,z);
+        Vector3f prev_point;
+        if(curr_segment->parent) {
+            prev_point = curr_segment->parent->world_pi;
+        } else {
+            prev_point = arm->origin;
+        }
+        float rx = curr_segment->world_pi[0] - prev_point[0];
+        float ry = curr_segment->world_pi[1] - prev_point[1];
+        float rz = curr_segment->world_pi[2] - prev_point[2];
+        glRotatef(-90.0, rx, ry, rz);
+        gluCylinder(quad, 0.05, 0.05, curr_segment->length, 32, 32);
+        glPopMatrix();
+
+        curr_segment = curr_segment->child;
     } 
 }
 
