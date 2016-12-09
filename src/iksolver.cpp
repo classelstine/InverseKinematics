@@ -92,7 +92,7 @@ float Arm::update_position(float epsilon, float step_size) {
     if(close_enough(end_effector, goal_position, epsilon)) { 
         return cur_error; 
     } 
-    MatrixXf jacobian(3, 12);
+    MatrixXf jacobian(3, 3*this->num_segments);
     jacobian = arm->get_jacobian(); 
     VectorXf dr = arm->get_dr(jacobian, step_size);
     arm->update_rotations(dr);
@@ -198,7 +198,7 @@ Matrix3f get_rodriguez(Vector3f rot_axis) {
         return rodriguez; 
     } 
     rot_axis.normalize();
-    print_vec_3(rot_axis);
+    //print_vec_3(rot_axis);
 
     Matrix3f I = Matrix3f::Identity();
     rx = cross_matrix(rot_axis);
@@ -214,7 +214,7 @@ Matrix3f cross_matrix(Vector3f rot_axis) {
     return rx;
 }
 MatrixXf pseudo_inv(MatrixXf J) {
-    MatrixXf J_plus(12, 3);
+    MatrixXf J_plus(3*arm->num_segments, 3);
     JacobiSVD<MatrixXf> svd( J, ComputeThinU | ComputeThinV);
     double tolerance = 0.000001 * std::max(J.cols(), J.rows()) *svd.singularValues().array().abs()(0);
     J_plus = svd.matrixV() * (svd.singularValues().array().abs() > tolerance).select(svd.singularValues().array().inverse(), 0).matrix().asDiagonal() * svd.matrixU().adjoint();
@@ -222,11 +222,11 @@ MatrixXf pseudo_inv(MatrixXf J) {
 }
 
 VectorXf Arm::get_dr(MatrixXf jacobian, float step) {
-    MatrixXf J_plus(12, 3);
+    MatrixXf J_plus(3*this->num_segments, 3);
     J_plus = pseudo_inv(jacobian);
     Vector3f diff = goal_position - this->get_end_effector_world();
     Vector3f cur_step = step * diff;
-    VectorXf dr(12);
+    VectorXf dr(3*this->num_segments);
     dr = J_plus * cur_step;
     return dr;
 }
@@ -348,6 +348,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
             double xpos, ypos;
             glfwGetCursorPos(window, &xpos, &ypos);
+            cout << "MOUSE CLICK" << endl;
             cout << xpos << " " << ypos << endl;
             GLint viewport[4]; //var to hold the viewport info
             GLdouble modelview[16]; //var to hold the modelview info
@@ -381,7 +382,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 // Given current global Arm, 
 // render it to the display
 // ***********************
-void render(void) {
+void render(void) { 
     //now we need to render arm
     //Render Origin
     float sphere_radius = 0.2;
@@ -390,6 +391,8 @@ void render(void) {
     float base = 0.08;
     float top = 0.08;
     int mat_idx = 0;
+    // render the goal
+    render_sphere(goal_position, sphere_radius * 0.5, slices, stacks, 0);
     Vector3f sphere_center = arm->origin;
     render_sphere(sphere_center, sphere_radius, slices, stacks, mat_idx);
     mat_idx++;
@@ -624,7 +627,7 @@ int main(int argc, char *argv[]) {
     } 
      
     epsilon = 0.05f;
-    step_size = 0.05f;
+    step_size = 0.1f;
 
 
     while( !glfwWindowShouldClose( window ) ) // infinite loop to draw object again and again

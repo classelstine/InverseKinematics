@@ -81,7 +81,7 @@ Matrix3f get_rodriguez(Vector3f);
 void print_vec_3(Vector3f);
 void print_vec_4(Vector4f);
 bool render_sphere(Vector3f, float, float, float, int);
-bool render_cylinder(float, Vector3f, Vector3f, float, float, float, float, float, int); 
+bool render_cylinder(float, Vector3f, Vector3f, float, float, float, float, float, int);
 material get_material(void);
 void set_material(int mat_idx);
 Matrix4f get_xi(Matrix3f Ri, Vector3f li);
