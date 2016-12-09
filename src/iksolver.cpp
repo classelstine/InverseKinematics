@@ -42,6 +42,7 @@ float step_size;
 bool wireframe_mode = false;
 float epsilon;
 float zoom = 1;
+material *material_list;
 
 Arm *arm;
 Vector3f goal_position;
@@ -250,8 +251,10 @@ void render(void) {
     float stacks = 32;
     float base = 0.08;
     float top = 0.08;
+    int mat_idx = 0;
     Vector3f sphere_center = arm->origin;
-    render_sphere(sphere_center, sphere_radius, slices, stacks);
+    render_sphere(sphere_center, sphere_radius, slices, stacks, mat_idx);
+    mat_idx++;
     GLUquadric *quad;
     
     //Render Rest of Arm
@@ -260,7 +263,8 @@ void render(void) {
     while (curr_segment) { 
         //render joint
         sphere_center = curr_segment->world_pi;
-        render_sphere(sphere_center, sphere_radius, slices, stacks);
+        render_sphere(sphere_center, sphere_radius, slices, stacks, mat_idx);
+        mat_idx++;
         //cout << "sphere at: " << x << " " << y << " " << z << endl;
         //render cylinder
         Vector3f cyl_base;
@@ -280,8 +284,8 @@ void render(void) {
         float rot_x = -r[1]*r[2];
         float rot_y = r[0]*r[2];
         Vector3f rot_cyl_axis = Vector3f(rot_x, rot_y, 0.0);
-        render_cylinder(angle, rot_cyl_axis, cyl_base, r.norm(), base, top, slices, stacks);
-        
+        render_cylinder(angle, rot_cyl_axis, cyl_base, r.norm(), base, top, slices, stacks, mat_idx);
+        mat_idx++;
         curr_segment = curr_segment->child;
     } 
 }
@@ -290,9 +294,10 @@ void render(void) {
 // render a sphere, which we
 // are using to represent joints
 // ***********************
-bool render_sphere(Vector3f center, float radius, float slices, float stacks) { 
+bool render_sphere(Vector3f center, float radius, float slices, float stacks, int mat_idx) { 
     glPushMatrix();
     GLUquadric *quad;
+    set_material(mat_idx);
     quad = gluNewQuadric();
     if( !quad) {
             cout << "quad didn't initialize" << endl;
@@ -311,8 +316,9 @@ bool render_sphere(Vector3f center, float radius, float slices, float stacks) {
 // render a sphere, which we
 // are using to represent joints
 // ***********************
-bool render_cylinder(float angle, Vector3f rot_axis, Vector3f cyl_loc, float height, float base, float top, float slices, float stacks) { 
+bool render_cylinder(float angle, Vector3f rot_axis, Vector3f cyl_loc, float height, float base, float top, float slices, float stacks, int mat_idx) { 
     glPushMatrix();
+    set_material(mat_idx);
     GLUquadric *quad;
     quad = gluNewQuadric();
     if( !quad) {
@@ -326,8 +332,27 @@ bool render_cylinder(float angle, Vector3f rot_axis, Vector3f cyl_loc, float hei
     gluCylinder(quad, base, top, height, slices, stacks);
     glPopMatrix();
     return true;
+}
+
+material get_material(void) {
+    material new_material = {};
+    for (int i = 0; i < 4; i++) { 
+        new_material.ambient[i] = (float) rand()/(RAND_MAX);
+        new_material.diffuse[i] = (float) rand()/(RAND_MAX);
+        new_material.specular[i] = (float) rand()/(RAND_MAX);
+        if (i == 0) 
+            new_material.shininess[i] = (float) rand()/(RAND_MAX)*128;
+    } 
+    return new_material;
 } 
 
+void set_material(int mat_idx) { 
+    material cyl_material = material_list[mat_idx];
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, cyl_material.diffuse); 
+    glMaterialfv(GL_FRONT, GL_AMBIENT, cyl_material.ambient); 
+    glMaterialfv(GL_FRONT, GL_SPECULAR, cyl_material.specular); 
+    glMaterialfv(GL_FRONT, GL_SHININESS, cyl_material.shininess); 
+} 
 //****************************************************
 // function that does the actual drawing of stuff
 //***************************************************
@@ -336,8 +361,8 @@ void display( GLFWwindow* window )
     //glOrtho(0*zoom, Width_global*zoom, 0*zoom, Height_global*zoom, 1, -1);
     glClearColor( 0.0f, 0.0f, 0.0f, 0.0f ); //clear background screen to black
     GLfloat light_pos[] = {1.0, 2.0, -3.0, 1.0}; 
-    GLfloat ambient_light[] = {0.9, 0.9, 0};
-    GLfloat diffuse_light[] = {0, 0.9, 0.9};
+    GLfloat ambient_light[] = {0.4, 0.4, 0.4};
+    GLfloat diffuse_light[] = {1.0, 1.0, 1.0};
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
@@ -355,7 +380,6 @@ void display( GLFWwindow* window )
     //glOrtho(0*zoom, Width_global*zoom, 0*zoom, Height_global*zoom, 1, -1);
     
     //drawCube(); // REPLACE ME!
-    //drawShapes();
     render();
 
 
@@ -420,9 +444,9 @@ int main(int argc, char *argv[]) {
     
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-	glOrtho(-3.5, 3.5, -3.5, 3.5, 5, -5);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+    glOrtho(-3.5, 3.5, -3.5, 3.5, 5, -5);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
     glEnable(GL_DEPTH_TEST);	// enable z-buffering
     glDepthFunc(GL_LESS);
@@ -435,6 +459,11 @@ int main(int argc, char *argv[]) {
     int path_mode = 0;
     initialize_goal();
     arm = new Arm();
+    material_list = new material[9];  
+    for (int i = 0; i < 9; i++) { 
+        material_list[i] = get_material();
+    } 
+     
     epsilon = 0.05f;
     step_size = 0.5f;
 

@@ -3,6 +3,13 @@
 using namespace std;
 using namespace Eigen;
 
+typedef struct Material {
+    GLfloat ambient[4];
+    GLfloat diffuse[4];
+    GLfloat specular[4];
+    GLfloat shininess[1];
+} material; 
+
 class Segment {
     public:
         Segment *parent;
@@ -69,7 +76,9 @@ void update_goal(int);
 void render(void);
 Matrix3f get_rodriguez(Vector3f);
 void print_vec(Vector3f);
-bool render_sphere(Vector3f, float, float, float);
-bool render_cylinder(float, Vector3f, Vector3f, float, float, float, float, float); 
+bool render_sphere(Vector3f, float, float, float, int);
+bool render_cylinder(float, Vector3f, Vector3f, float, float, float, float, float, int); 
+material get_material(void);
+void set_material(int mat_idx);
 
 
