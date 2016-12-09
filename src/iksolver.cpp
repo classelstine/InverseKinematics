@@ -89,7 +89,7 @@ float Arm::update_position(float epsilon, float step_size) {
     } 
     
     Matrix4f jacobian = arm->get_jacobian(); 
-    Matrix4f dr = arm->get_dr(jacobian, step_size);
+    VectorXf dr = arm->get_dr(jacobian, step_size);
     arm->update_rotations(dr);
     arm->calc_new_pi();
     end_effector = arm->get_end_effector_world();
@@ -202,15 +202,22 @@ Matrix3f cross_matrix(Vector3f rot_axis) {
           rot_axis[2], 0, -1*rot_axis[0], 
           -1*rot_axis[1], rot_axis[0], 0;
     return rx;
-} 
+}
+MatrixXf pseudo_inv(MatrixXf J) {
+    MatrixXf J_plus(12, 3);
+    JacobiSVD<MatrixXf> svd( J, ComputeThinU | ComputeThinV);
+    double tolerance = 0.000001 * std::max(J.cols(), J.rows()) *svd.singularValues().array().abs()(0);
+    J_plus = svd.matrixV() * (svd.singularValues().array().abs() > tolerance).select(svd.singularValues().array().inverse(), 0).matrix().asDiagonal() * svd.matrixU().adjoint();
+    return J_plus;
+}
 
-Matrix4f Arm::get_dr(Matrix4f jacobian, float step) {
-    Matrix4f dr;
-    dr << 1, 0, 0, 0,
-      0, 1, 0, 0, 
-      0, 0, 1, 0,
-      0, 0, 0, 1;
-     
+VectorXf Arm::get_dr(MatrixXf jacobian, float step) {
+    MatrixXf J_plus(12, 3);
+    J_plus = pseudo_inv(jacobian);
+    Vector3f diff = goal_position - this->get_end_effector_world();
+    Vector3f cur_step = step * diff;
+    VectorXf dr(12);
+    dr = J_plus * cur_step;
     return dr;
 }
 
@@ -233,7 +240,7 @@ void Arm::calc_new_pi(void) {
     } 
 }
 
-void Arm::update_rotations(Matrix4f dr) { 
+void Arm::update_rotations(VectorXf dr) { 
     return;
 } 
 
@@ -547,7 +554,14 @@ int main(int argc, char *argv[]) {
     int path_mode = 0;
     initialize_goal();
     arm = new Arm();
-    arm->get_jacobian();
+    MatrixXf J = arm->get_jacobian();
+    cout << "J+" << endl;
+    cout << pseudo_inv(J) << endl;
+    
+    cout << "DR" << endl;
+    cout << arm->get_dr(J, 0.001) << endl;
+    
+    
     while (true) { 
     } 
     material_list = new material[9];  

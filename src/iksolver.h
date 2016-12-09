@@ -62,8 +62,8 @@ class Arm {
         calc_new_pi();
     }
     MatrixXf get_jacobian(void);
-    Matrix4f get_dr(Matrix4f, float);
-    void update_rotations(Matrix4f);
+    VectorXf get_dr(MatrixXf, float);
+    void update_rotations(VectorXf);
     Vector3f get_end_effector_world(void);
     Vector3f get_end_effector_local(void);
     float update_position(float, float);
@@ -87,5 +87,5 @@ Matrix4f get_xi(Matrix3f Ri, Vector3f li);
 Vector3f non_homogenous(Vector4f);
 Matrix3f cross_matrix(Vector3f);
 void print_seg(Segment *curr_seg);
-
+MatrixXf pseudo_inv(MatrixXf J);
 
