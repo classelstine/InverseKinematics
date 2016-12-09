@@ -20,7 +20,7 @@ class Segment {
         float length;
 
         Segment (void) {
-            r_xyz = Vector3f(1.0, 0.5, 0.0);
+            r_xyz = Vector3f(0.0, 0.0, 0.0);
             length = 1;
             parent = NULL;
             child = NULL;
@@ -40,8 +40,9 @@ class Arm {
     void calc_new_pi(void); 
     //Default 4 segments
     Arm() { 
+        this->num_segments = 4;
         root = new Segment();  
-        origin = Vector3f(0.0,0.0,5.0); 
+        origin = Vector3f(0.0,0.0,0.0); 
         Segment *child1 = new Segment();  
         Segment *child2 = new Segment();  
         Segment *child3 = new Segment();  
@@ -49,14 +50,15 @@ class Arm {
         root->set_child(child1);
         child1->set_child(child2);
         child2->set_child(child3);
+       
         Segment *curr = root;
         float length = 1;
         while(curr) { 
-            curr->world_pi = Vector3f(length,0.0,5.0);
+            curr->world_pi = Vector3f(length,0.0,0.0);
+            curr->length = length;
             length += 1;
             curr = curr->child;
         } 
-
         calc_new_pi();
     }
     MatrixXf get_jacobian(void);
@@ -75,11 +77,15 @@ void initialize_goal(void);
 void update_goal(int);
 void render(void);
 Matrix3f get_rodriguez(Vector3f);
-void print_vec(Vector3f);
+void print_vec_3(Vector3f);
+void print_vec_4(Vector4f);
 bool render_sphere(Vector3f, float, float, float, int);
 bool render_cylinder(float, Vector3f, Vector3f, float, float, float, float, float, int); 
 material get_material(void);
 void set_material(int mat_idx);
 Matrix4f get_xi(Matrix3f Ri, Vector3f li);
+Vector3f non_homogenous(Vector4f);
+Matrix3f cross_matrix(Vector3f);
+void print_seg(Segment *curr_seg);
 
 

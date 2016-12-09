@@ -98,17 +98,19 @@ float Arm::update_position(float epsilon, float step_size) {
 } 
 
 MatrixXf Arm::get_jacobian(void) {
-    MatrixXf J(3, 3*num_segments);
-    Matrix3f rotation_list[num_segments];
-    Matrix4f transformation_list[num_segments];
+    Matrix3f *rotation_list = new Matrix3f[num_segments];
     Matrix3f compound_rotation = Matrix3f::Identity();
-    Matrix4f compound_transformation = Matrix4f::Identity();
     int seg_idx = 0;
     //get rotations
     Segment *curr_seg = this->root;
-    
     while(true) { 
-        Vector3f rot_vec = curr_seg->r_xyz;
+        Vector3f rot_vec;
+        if (!curr_seg->parent) { 
+            rot_vec = Vector3f(0,0,0);
+        }
+        else {
+            rot_vec = curr_seg->parent->r_xyz;
+        } 
         Matrix3f ri = get_rodriguez(rot_vec);
         compound_rotation = compound_rotation*ri;
         rotation_list[seg_idx] = compound_rotation;
@@ -118,26 +120,62 @@ MatrixXf Arm::get_jacobian(void) {
         curr_seg = curr_seg->child;
         seg_idx++;
     }
-
     //get transformations
-
+    Matrix4f *transformation_list = new Matrix4f[num_segments];
+    Matrix4f compound_transformation = Matrix4f::Identity();
     while(true) {
+        if (!curr_seg->child) { 
+            transformation_list[seg_idx] = compound_transformation;
+        } 
+        else { 
+            Vector3f rot_vec = curr_seg->r_xyz;
+            Matrix3f ri = get_rodriguez(rot_vec);
+            Vector3f pi = curr_seg->local_pi;
+            Matrix4f xi = get_xi(ri, pi);
+            compound_transformation = xi*compound_transformation;
+            transformation_list[seg_idx] = compound_transformation;
+        } 
+        if (!curr_seg->parent) { 
+            break;
+        } 
+        curr_seg = curr_seg->parent;
+        seg_idx--;
     }
-
-    J << 1, 0, 0, 0,
-      0, 1, 0, 0, 
-      0, 0, 1, 0,
-      0, 0, 0, 1;
+    //calculate Ji's 
+    MatrixXf J(3, 3*num_segments);
+    Vector4f pn;
+    pn <<  this->get_end_effector_local(), 1;
+    while(true) { 
+        Matrix4f xi = transformation_list[seg_idx];
+        Vector4f x_pn_4 = transformation_list[seg_idx]*pn;
+        Vector3f x_pn_3 = non_homogenous(x_pn_4);
+        Matrix3f x_pn_cross = cross_matrix(x_pn_3);
+        Matrix3f ri = rotation_list[seg_idx];
+        Matrix3f Ji = -1*rotation_list[seg_idx]*x_pn_cross; 
+        J.block<3,3>(0,3*seg_idx) = Ji;
+        if (!curr_seg->child) { 
+            break;
+        } 
+        curr_seg = curr_seg->child;
+        seg_idx++;
+    }
+    cout << "this is Jacobian" << endl;
+    cout << J << endl;
     return J;
 }
+
+Vector3f non_homogenous(Vector4f h) { 
+    Vector3f non_h = Vector3f(h[0]/h[3], h[1]/h[3], h[2]/h[3]);
+    return non_h;
+} 
 
 Matrix4f get_xi(Matrix3f Ri, Vector3f li) { 
     MatrixXf top(3, 4);
     top << Ri, li;
     Matrix4f xi;
     Vector4f bottom = {0,0,0,1};
-    xi << top,
-        bottom;
+    xi.block<3,4>(0,0) = top;
+    xi.block<1,4>(3,0) = bottom;
     return xi;
 } 
 
@@ -150,14 +188,20 @@ Matrix3f get_rodriguez(Vector3f rot_axis) {
         return rodriguez; 
     } 
     rot_axis.normalize();
-    print_vec(rot_axis);
+    print_vec_3(rot_axis);
 
     Matrix3f I = Matrix3f::Identity();
+    rx = cross_matrix(rot_axis);
+    rodriguez = rx*sin(theta) + I + rx*rx*(1-cos(theta));
+    return rodriguez;
+} 
+
+Matrix3f cross_matrix(Vector3f rot_axis) { 
+    Matrix3f rx;
     rx << 0, -1*rot_axis[2], rot_axis[1],
           rot_axis[2], 0, -1*rot_axis[0], 
           -1*rot_axis[1], rot_axis[0], 0;
-   rodriguez = rx*sin(theta) + I + rx*rx*(1-cos(theta));
-   return rodriguez;
+    return rx;
 } 
 
 Matrix4f Arm::get_dr(Matrix4f jacobian, float step) {
@@ -199,7 +243,7 @@ Vector3f Arm::get_end_effector_local(void){
 }
 
 Vector3f Arm::get_end_effector_world(void){
-    Vector3f end = root->child->child->child->local_pi;
+    Vector3f end = root->child->child->child->world_pi;
     return end;
 }
 
@@ -437,10 +481,26 @@ void size_callback(GLFWwindow* window, int width, int height)
     display(window);
 }
 
-void print_vec(Vector3f vec) { 
+void print_vec_3(Vector3f vec) { 
     cout << vec[0] << " " << vec[1] << " " << vec[2] << endl;
 } 
 
+void print_vec_4(Vector4f vec) { 
+    cout << vec[0] << " " << vec[1] << " " << vec[2] << " " << vec[3] << endl;
+}
+
+void print_seg(Segment *curr_seg) { 
+    cout << "CURR SEG INFO" << endl;
+    cout << "world pi" << endl;
+    print_vec_3(curr_seg->world_pi);
+    cout << "local pi" << endl;
+    print_vec_3(curr_seg->local_pi);
+    cout << "rot axis" << endl;
+    print_vec_3(curr_seg->r_xyz);
+    cout << "length" << endl;
+    cout << curr_seg->length << endl;
+    cout << "DONE WITH SEG INFO" << endl;
+} 
 
 //****************************************************
 // the usual stuff, nothing exciting here
@@ -448,9 +508,6 @@ void print_vec(Vector3f vec) {
 int main(int argc, char *argv[]) {
     //This initializes glfw
     initializeRendering();
-    Vector3f rot_axis = Vector3f(0.01,0.01,0.01);
-    Vector3f x = Vector3f(5,4,1);
-    
     GLFWwindow* window = glfwCreateWindow( Width_global, Height_global, "CS184", NULL, NULL );
     if ( !window )
     {
@@ -490,6 +547,9 @@ int main(int argc, char *argv[]) {
     int path_mode = 0;
     initialize_goal();
     arm = new Arm();
+    arm->get_jacobian();
+    while (true) { 
+    } 
     material_list = new material[9];  
     for (int i = 0; i < 9; i++) { 
         material_list[i] = get_material();
