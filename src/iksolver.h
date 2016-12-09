@@ -44,34 +44,32 @@ class Arm {
         child2->set_child(child3);
         Segment *curr = root;
         float length = 1;
-        cout << "1" << endl;
         while(curr) { 
             curr->world_pi = Vector3f(length,0.0,5.0);
             length += 1;
             curr = curr->child;
         } 
-        cout << "2" << endl;
 
         calc_new_pi();
-        cout << "past calc pi" << endl;
     }
     Matrix4f get_jacobian(void);
-    Matrix4f get_dr(Matrix4f jacobian, float step);
-    void update_rotations(Matrix4f dr);
+    Matrix4f get_dr(Matrix4f, float);
+    void update_rotations(Matrix4f);
     Vector3f get_end_effector_world(void);
     Vector3f get_end_effector_local(void);
-    float update_position(float epsilon, float step_size);
+    float update_position(float, float);
         
 };
 
 
 
-bool close_enough(Vector3f end_effector, Vector3f goal, float epsilon);
+bool close_enough(Vector3f, Vector3f, float);
 void initialize_goal(void);
-void update_goal(int path_mode);
+void update_goal(int);
 void render(void);
 Matrix3f get_rodriguez(Vector3f);
-void print_vec(Vector3f vec);
-
+void print_vec(Vector3f);
+bool render_sphere(Vector3f, float, float, float);
+bool render_cylinder(float, Vector3f, Vector3f, float, float, float, float, float); 
 
 

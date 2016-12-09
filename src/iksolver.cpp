@@ -114,9 +114,7 @@ Matrix3f get_rodriguez(Vector3f rot_axis) {
         rodriguez = Matrix3f::Identity();
         return rodriguez; 
     } 
-    cout << "theta: " << theta << endl;
     rot_axis.normalize();
-    cout << "post normalize" << endl;
     print_vec(rot_axis);
 
     Matrix3f I = Matrix3f::Identity();
@@ -138,38 +136,22 @@ Matrix4f Arm::get_dr(Matrix4f jacobian, float step) {
 }
 
 void Arm::calc_new_pi(void) {
-    cout << "in calc pi" << endl;
     Matrix3f compound_rotation = Matrix3f::Identity();
-    cout << "1" << endl;
     Segment *curr_seg = this->root;
-    cout << "2" << endl;
     while(curr_seg) { 
-        cout << "1" << endl;
         Vector3f rot_vec = curr_seg->r_xyz;
-        cout << "2" << endl;
         Matrix3f ri = get_rodriguez(rot_vec);
-        cout << "3" << endl;
         compound_rotation = compound_rotation*ri;
-        cout << "4" << endl;
         Vector3f li = Vector3f(curr_seg->length, 0, 0);  
-        cout << "5" << endl;
         curr_seg->local_pi = ri*li; 
-        cout << "6" << endl;
         if (!curr_seg->parent) { 
-            cout << "7" << endl;
             curr_seg->world_pi = compound_rotation*li + this->origin; 
-            cout << "8" << endl;
         }
         else { 
-            cout << "9" << endl;
             curr_seg->world_pi = compound_rotation*li + curr_seg->parent->world_pi;
-            cout << "10" << endl;
         } 
-        cout << "12" << endl;
         curr_seg = curr_seg->child;
-        cout << "11" << endl;
     } 
-    cout << "13" << endl;
 }
 
 void Arm::update_rotations(Matrix4f dr) { 
@@ -261,124 +243,90 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 // render it to the display
 // ***********************
 void render(void) {
-    /*
-    //how to render circle 
-    glColor3f(0,0,1);
-    GLUquadric *quad;
-    quad = gluNewQuadric();
-    if( !quad) {
-            cout << "quad didn't initialize" << endl;
-    }
-    gluQuadricNormals(quad, GLU_SMOOTH);
-    gluQuadricTexture(quad, GL_TRUE); 
-    glTranslatef(0,0,4);
-    gluSphere(quad,1.0,18,10);
-    */
-    /*
-    //how to render cylinder 
-    glColor3f(0,1,1);
-    GLUquadric *quad;
-    quad = gluNewQuadric();
-    if( !quad) {
-            cout << "didn't work" << endl;
-    }
-    gluQuadricNormals(quad, GLU_SMOOTH);
-    gluQuadricTexture(quad, GL_TRUE); 
-    glTranslatef(0,2,4);
-    glRotatef(90.0,0.0,0.0,0.0);
-    gluCylinder(quad, 1.0, 1.0, 3, 32, 32);
-    */
     //now we need to render arm
     //Render Origin
-    cout << "1" << endl;
-    glPushMatrix();
+    float sphere_radius = 0.2;
+    float slices = 32;
+    float stacks = 32;
+    float base = 0.08;
+    float top = 0.08;
+    Vector3f sphere_center = arm->origin;
+    render_sphere(sphere_center, sphere_radius, slices, stacks);
     GLUquadric *quad;
-    quad = gluNewQuadric();
-    if( !quad) {
-            cout << "quad didn't initialize" << endl;
-    }
-    gluQuadricNormals(quad, GLU_FLAT);
-    gluQuadricTexture(quad, GL_TRUE); 
-    float x = arm->origin[0];
-    float y = arm->origin[1];
-    float z = arm->origin[2];
-    cout << "sphere at: " << x << " " << y << " " << z << endl;
-    glTranslatef(x, y, z);
-    gluSphere(quad,0.1,18,10);
-    glPopMatrix();
     
     //Render Rest of Arm
     //Need to add cylinders
     Segment *curr_segment = arm->root;
     while (curr_segment) { 
-        glPushMatrix();
-        quad = gluNewQuadric();
-        if( !quad) {
-                cout << "quad didn't initialize" << endl;
-        }
-        gluQuadricNormals(quad, GLU_SMOOTH);
-        gluQuadricTexture(quad, GL_TRUE); 
-        x = curr_segment->world_pi[0];
-        y = curr_segment->world_pi[1];
-        z = curr_segment->world_pi[2];
-        cout << "sphere at: " << x << " " << y << " " << z << endl;
-        glTranslatef(x, y, z);
-        gluSphere(quad,0.1,18,10);
-        glPopMatrix();
-
-        Vector3f prev_point;
+        //render joint
+        sphere_center = curr_segment->world_pi;
+        render_sphere(sphere_center, sphere_radius, slices, stacks);
+        //cout << "sphere at: " << x << " " << y << " " << z << endl;
+        //render cylinder
+        Vector3f cyl_base;
         if(curr_segment->parent) {
-            prev_point = curr_segment->parent->world_pi;
+            cyl_base = curr_segment->parent->world_pi;
         } else {
-            prev_point = arm->origin;
+            cyl_base = arm->origin;
         }
-        float rx = curr_segment->world_pi[0] - prev_point[0];
-        float ry = curr_segment->world_pi[1] - prev_point[1];
-        float rz = curr_segment->world_pi[2] - prev_point[2];
-        if (rz == 0) {
-            rz = 0.001;
+        Vector3f r = curr_segment->world_pi - cyl_base;
+        if (r[2] == 0) {
+            r[2] = 0.001;
         }
-        Vector3f r = Vector3f(rx, ry, rz);
-        float angle = 57.2957795*acos( rz/r.norm());
-        if (rz < 0.0) {
+        float angle = 57.2957795*acos( r[2]/r.norm());
+        if (r[2] < 0.0) {
             angle = -1 * angle;
         }
-        float rot_x = -ry*rz;
-        float rot_y = rx*rz;
+        float rot_x = -r[1]*r[2];
+        float rot_y = r[0]*r[2];
+        Vector3f rot_cyl_axis = Vector3f(rot_x, rot_y, 0.0);
+        render_cylinder(angle, rot_cyl_axis, cyl_base, r.norm(), base, top, slices, stacks);
         
-        glPushMatrix();
-        quad = gluNewQuadric();
-        gluQuadricNormals(quad, GLU_SMOOTH);
-        gluQuadricTexture(quad, GL_TRUE); 
-        glTranslatef(prev_point[0], prev_point[1], prev_point[2]); 
-        glRotatef(angle, rot_x, rot_y, 0.0);
-        gluCylinder(quad, 0.05, 0.05, r.norm(), 32, 32);
-        glPopMatrix();
-
         curr_segment = curr_segment->child;
     } 
 }
-
-/*
-void drawShapes(){
-    if (is_adaptive) {
-        glBegin(GL_TRIANGLES) ;
-    } else {
-        glBegin(GL_QUADS);
+// ***********************
+//    RENDER SPHERE
+// render a sphere, which we
+// are using to represent joints
+// ***********************
+bool render_sphere(Vector3f center, float radius, float slices, float stacks) { 
+    glPushMatrix();
+    GLUquadric *quad;
+    quad = gluNewQuadric();
+    if( !quad) {
+            cout << "quad didn't initialize" << endl;
+            return false;
     }
-    for(shape s: shapes) {
-        glColor3f(0.0f, 0.0f, 1.0f);
-        int i = 0;
-        for(glm::vec3 v : s.vertices) {
-            glNormal3f(s.normals[i][0], s.normals[i][1], s.normals[i][2]);
-            glVertex3f(v[0], v[1], v[2]);
-            i++;
-        }
+    gluQuadricNormals(quad, GLU_SMOOTH);
+    gluQuadricTexture(quad, GL_TRUE); 
+    glTranslatef(center[0], center[1], center[2]);
+    gluSphere(quad, radius, slices, stacks);
+    glPopMatrix();
+    return true;
+} 
+        
+// ***********************
+//    RENDER CYLINDER
+// render a sphere, which we
+// are using to represent joints
+// ***********************
+bool render_cylinder(float angle, Vector3f rot_axis, Vector3f cyl_loc, float height, float base, float top, float slices, float stacks) { 
+    glPushMatrix();
+    GLUquadric *quad;
+    quad = gluNewQuadric();
+    if( !quad) {
+            cout << "quad didn't initialize" << endl;
+            return false;
     }
-    glEnd();
-}
-*/
-
+    gluQuadricNormals(quad, GLU_SMOOTH);
+    gluQuadricTexture(quad, GL_TRUE); 
+    glTranslatef(cyl_loc[0], cyl_loc[1], cyl_loc[2]); 
+    glRotatef(angle, rot_axis[0], rot_axis[1], rot_axis[2]);
+    gluCylinder(quad, base, top, height, slices, stacks);
+    glPopMatrix();
+    return true;
+} 
 
 //****************************************************
 // function that does the actual drawing of stuff
@@ -447,11 +395,7 @@ int main(int argc, char *argv[]) {
     initializeRendering();
     Vector3f rot_axis = Vector3f(0.01,0.01,0.01);
     Vector3f x = Vector3f(5,4,1);
-    cout << "pre rotation: " << endl;
-    print_vec(x);
-    cout << "post rotation: " << endl;
     
-    cout << "1" << endl;
     GLFWwindow* window = glfwCreateWindow( Width_global, Height_global, "CS184", NULL, NULL );
     if ( !window )
     {
@@ -460,7 +404,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    cout << "2" << endl;
     const GLFWvidmode * mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     if ( !mode )
     {
@@ -469,7 +412,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     
-    cout << "3" << endl;
     glfwMakeContextCurrent( window );
     
     // Get the pixel coordinate of the window
@@ -488,7 +430,6 @@ int main(int argc, char *argv[]) {
     glfwSetWindowTitle(window, "CS184");
     glfwSetWindowSizeCallback(window, size_callback);
     glfwSetKeyCallback(window, key_callback);
-    cout << "4" << endl;
 
     
     int path_mode = 0;
