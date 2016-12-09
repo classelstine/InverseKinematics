@@ -42,7 +42,7 @@ class Arm {
     Arm() { 
         this->num_segments = 4;
         root = new Segment();  
-        origin = Vector3f(0.0,0.0,0.0); 
+        origin = Vector3f(0.0,0.0,5); 
         Segment *child1 = new Segment();  
         Segment *child2 = new Segment();  
         Segment *child3 = new Segment();  
@@ -54,7 +54,7 @@ class Arm {
         Segment *curr = root;
         float length = 1;
         while(curr) { 
-            curr->world_pi = Vector3f(length,0.0,0.0);
+            curr->world_pi = Vector3f(length,0.0,5);
             curr->length = length;
             length += 1;
             curr = curr->child;
@@ -67,6 +67,7 @@ class Arm {
     Vector3f get_end_effector_world(void);
     Vector3f get_end_effector_local(void);
     float update_position(float, float);
+    float get_total_length(void);
         
 };
 
@@ -88,4 +89,6 @@ Vector3f non_homogenous(Vector4f);
 Matrix3f cross_matrix(Vector3f);
 void print_seg(Segment *curr_seg);
 MatrixXf pseudo_inv(MatrixXf J);
+float random_float_in_range(float a, float b);
+
 

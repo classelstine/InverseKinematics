@@ -57,6 +57,12 @@ bool close_enough(Vector3f end, Vector3f goal, float epsilon) {
     return is_close;
 }
 
+float random_float_in_range(float a, float b) {
+        float random = ((float) rand()) / (float) RAND_MAX;
+        float diff = b - a;
+        float r = random * diff;
+        return a + r;
+}
 
 //****************************************************
 // Simple init function
@@ -159,8 +165,6 @@ MatrixXf Arm::get_jacobian(void) {
         curr_seg = curr_seg->child;
         seg_idx++;
     }
-    cout << "this is Jacobian" << endl;
-    cout << J << endl;
     return J;
 }
 
@@ -254,17 +258,15 @@ Vector3f Arm::get_end_effector_world(void){
     return end;
 }
 
-
-//****************************************************
-// A routine to set a pixel by drawing a GL point.  This is not a
-// general purpose routine as it assumes a lot of stuff specific to
-// this example.
-//****************************************************
-
-void setPixel(float x, float y, GLfloat r, GLfloat g, GLfloat b) {
-    glColor3f(r, g, b);
-    glVertex2f(x+0.5, y+0.5);  // The 0.5 is to target pixel centers
-    // Note: Need to check for gap bug on inst machines.
+float Arm::get_total_length(void) {
+    float length = 0;
+    Segment *curr = this->root;
+    while(curr) { 
+        curr->world_pi = Vector3f(length,0.0,0.0);
+        length = curr->length + length;
+        curr = curr->child;
+    } 
+    return length;
 }
 
 //****************************************************
@@ -322,6 +324,40 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         default: break;
     }
     
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+            double xpos, ypos;
+            glfwGetCursorPos(window, &xpos, &ypos);
+            cout << xpos << " " << ypos << endl;
+            GLint viewport[4]; //var to hold the viewport info
+            GLdouble modelview[16]; //var to hold the modelview info
+            GLdouble projection[16]; //var to hold the projection matrix info
+            GLfloat win_x, win_y, win_z; //variables to hold screen x,y,z coordinates
+            GLdouble world_x, world_y, world_z; //variables to hold world x,y,z coordinates
+
+            glGetDoublev( GL_MODELVIEW_MATRIX, modelview ); //get the modelview info
+            glGetDoublev( GL_PROJECTION_MATRIX, projection ); //get the projection matrix info
+            glGetIntegerv( GL_VIEWPORT, viewport ); //get the viewport info
+
+            win_x = (float)xpos;
+            win_y = (float)viewport[3] - (float)ypos;
+            win_z = 0;
+
+            //get the world coordinates from the screen coordinates
+            gluUnProject( win_x, win_y, win_z, modelview, projection, viewport, &world_x, &world_y, &world_z);
+            float length = arm->get_total_length();
+            float x = (float) world_x;
+            float y = (float) world_y;
+            float z = random_float_in_range((-1*length)/2, length/2) + arm->origin[2]; 
+            goal_position[0] = x;
+            goal_position[1] = y;
+            goal_position[2] = z;
+            cout << "goal" << endl;
+            print_vec_3(goal_position);
+        } 
 }
 // ***********************
 //    RENDER FUNCTION
@@ -464,7 +500,6 @@ void display( GLFWwindow* window )
     
     //glOrtho(0*zoom, Width_global*zoom, 0*zoom, Height_global*zoom, 1, -1);
     
-    //drawCube(); // REPLACE ME!
     render();
     glfwSwapBuffers(window);
 
@@ -549,6 +584,7 @@ int main(int argc, char *argv[]) {
     glfwSetWindowTitle(window, "CS184");
     glfwSetWindowSizeCallback(window, size_callback);
     glfwSetKeyCallback(window, key_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     
     int path_mode = 0;
@@ -562,8 +598,7 @@ int main(int argc, char *argv[]) {
     cout << arm->get_dr(J, 0.001) << endl;
     
     
-    while (true) { 
-    } 
+    arm->get_jacobian();
     material_list = new material[9];  
     for (int i = 0; i < 9; i++) { 
         material_list[i] = get_material();
@@ -577,13 +612,12 @@ int main(int argc, char *argv[]) {
     {   // because once object is draw then window is terminated
         display( window );
         update_goal(path_mode);
-        arm->update_position(epsilon, step_size);
+        //arm->update_position(epsilon, step_size);
         
         if (auto_strech){
             glfwSetWindowSize(window, mode->width, mode->height);
             glfwSetWindowPos(window, 0, 0);
         }
-        
         glfwPollEvents();
         
     }
