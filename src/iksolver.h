@@ -36,7 +36,7 @@ class Arm {
     public:
         Segment *root;
         Vector3f origin;
-        unsigned int num_segments; 
+        int num_segments; 
     void calc_new_pi(void); 
     //Default 4 segments
     Arm() { 
@@ -59,7 +59,7 @@ class Arm {
 
         calc_new_pi();
     }
-    Matrix4f get_jacobian(void);
+    MatrixXf get_jacobian(void);
     Matrix4f get_dr(Matrix4f, float);
     void update_rotations(Matrix4f);
     Vector3f get_end_effector_world(void);
@@ -80,5 +80,6 @@ bool render_sphere(Vector3f, float, float, float, int);
 bool render_cylinder(float, Vector3f, Vector3f, float, float, float, float, float, int); 
 material get_material(void);
 void set_material(int mat_idx);
+Matrix4f get_xi(Matrix3f Ri, Vector3f li);
 
 

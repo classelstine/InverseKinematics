@@ -97,8 +97,33 @@ float Arm::update_position(float epsilon, float step_size) {
     return error;
 } 
 
-Matrix4f Arm::get_jacobian(void) {
-    Matrix4f J;
+MatrixXf Arm::get_jacobian(void) {
+    MatrixXf J(3, 3*num_segments);
+    Matrix3f rotation_list[num_segments];
+    Matrix4f transformation_list[num_segments];
+    Matrix3f compound_rotation = Matrix3f::Identity();
+    Matrix4f compound_transformation = Matrix4f::Identity();
+    int seg_idx = 0;
+    //get rotations
+    Segment *curr_seg = this->root;
+    
+    while(true) { 
+        Vector3f rot_vec = curr_seg->r_xyz;
+        Matrix3f ri = get_rodriguez(rot_vec);
+        compound_rotation = compound_rotation*ri;
+        rotation_list[seg_idx] = compound_rotation;
+        if (!curr_seg->child) { 
+            break;
+        } 
+        curr_seg = curr_seg->child;
+        seg_idx++;
+    }
+
+    //get transformations
+
+    while(true) {
+    }
+
     J << 1, 0, 0, 0,
       0, 1, 0, 0, 
       0, 0, 1, 0,
@@ -106,6 +131,15 @@ Matrix4f Arm::get_jacobian(void) {
     return J;
 }
 
+Matrix4f get_xi(Matrix3f Ri, Vector3f li) { 
+    MatrixXf top(3, 4);
+    top << Ri, li;
+    Matrix4f xi;
+    Vector4f bottom = {0,0,0,1};
+    xi << top,
+        bottom;
+    return xi;
+} 
 
 Matrix3f get_rodriguez(Vector3f rot_axis) { 
     Matrix3f rx;
@@ -381,9 +415,6 @@ void display( GLFWwindow* window )
     
     //drawCube(); // REPLACE ME!
     render();
-
-
- 
     glfwSwapBuffers(window);
 
 
