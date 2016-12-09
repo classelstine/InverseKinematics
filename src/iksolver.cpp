@@ -88,10 +88,9 @@ void update_goal(int mode) {
 //****************************************************
 float Arm::update_position(float epsilon, float step_size) {
     Vector3f end_effector = arm->get_end_effector_world();
-    float error;
+    float cur_error = (end_effector - goal_position).norm();
     if(close_enough(end_effector, goal_position, epsilon)) { 
-        error = (end_effector - goal_position).norm();
-        return error; 
+        return cur_error; 
     } 
     MatrixXf jacobian(3, 12);
     jacobian = arm->get_jacobian(); 
@@ -100,8 +99,14 @@ float Arm::update_position(float epsilon, float step_size) {
     arm->calc_new_pi();
     end_effector = arm->get_end_effector_world();
     
-    error = (end_effector - goal_position).norm();
-    return error;
+    float after_rotation_error = (end_effector - goal_position).norm();
+    if (after_rotation_error > cur_error) {
+        arm->update_rotations(-1 * dr);
+        arm->calc_new_pi();
+    } else {
+        cur_error = after_rotation_error;
+    }
+    return cur_error;
 } 
 
 MatrixXf Arm::get_jacobian(void) {
@@ -293,7 +298,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         case GLFW_KEY_LEFT :
             if (action) {
                 if (mods == GLFW_MOD_SHIFT) {
-                    translation[0] -= 0.001f * Width_global;
+                    goal_position[0] -= 1.0f;
                 } else {
                     rotation[0] += 5.0f;
                 }
@@ -302,7 +307,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         case GLFW_KEY_RIGHT:
             if (action) {
                 if (mods == GLFW_MOD_SHIFT){
-                    translation[0] += 0.001f * Width_global;
+                    goal_position[0] += 1.0f;
                 } else {
                     rotation[0] -= 5.0f;
                 }
@@ -311,7 +316,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         case GLFW_KEY_UP   :
             if (action) {
                 if (mods == GLFW_MOD_SHIFT) {
-                    translation[1] += 0.001f * Height_global;
+                    goal_position[1] += 1.0f;
                 } else {
                     rotation[1] += 5.0f;
                 }
@@ -320,7 +325,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         case GLFW_KEY_DOWN :
             if (action) {
                 if (mods == GLFW_MOD_SHIFT) {
-                    translation[1] -= 0.001f * Height_global;
+                    goal_position[1] -= 1.0f;
                 } else {
                     rotation[2] += 5.0f;
                 }
@@ -619,7 +624,7 @@ int main(int argc, char *argv[]) {
     } 
      
     epsilon = 0.05f;
-    step_size = 0.5f;
+    step_size = 0.05f;
 
 
     while( !glfwWindowShouldClose( window ) ) // infinite loop to draw object again and again
