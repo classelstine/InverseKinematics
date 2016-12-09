@@ -42,7 +42,7 @@ class Arm {
     Arm() { 
         this->num_segments = 4;
         root = new Segment();  
-        origin = Vector3f(0.0,0.0,5); 
+        origin = Vector3f(0.0,0.0,5.0); 
         Segment *child1 = new Segment();  
         Segment *child2 = new Segment();  
         Segment *child3 = new Segment();  
@@ -54,7 +54,7 @@ class Arm {
         Segment *curr = root;
         float length = 1;
         while(curr) { 
-            curr->world_pi = Vector3f(length,0.0,5);
+            curr->world_pi = Vector3f(length,0.0,5.0);
             curr->length = length;
             length += 1;
             curr = curr->child;

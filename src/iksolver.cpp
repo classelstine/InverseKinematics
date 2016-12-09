@@ -93,12 +93,13 @@ float Arm::update_position(float epsilon, float step_size) {
         error = (end_effector - goal_position).norm();
         return error; 
     } 
-    
-    Matrix4f jacobian = arm->get_jacobian(); 
+    MatrixXf jacobian(3, 12);
+    jacobian = arm->get_jacobian(); 
     VectorXf dr = arm->get_dr(jacobian, step_size);
     arm->update_rotations(dr);
     arm->calc_new_pi();
     end_effector = arm->get_end_effector_world();
+    
     error = (end_effector - goal_position).norm();
     return error;
 } 
@@ -244,7 +245,18 @@ void Arm::calc_new_pi(void) {
     } 
 }
 
-void Arm::update_rotations(VectorXf dr) { 
+void Arm::update_rotations(VectorXf dr) {
+    int seg_idx = 0;
+    Segment *cur_seg = this->root;
+    while(cur_seg) {
+        int id = seg_idx * 3;
+        Vector3f new_xyz = Vector3f(dr[id], dr[id+1], dr[id+2]);
+        cur_seg->r_xyz = new_xyz + cur_seg->r_xyz;
+        //cout << "updated rotation :" << seg_idx << endl;
+        //cout << cur_seg->r_xyz << endl;
+        seg_idx++;
+        cur_seg = cur_seg->child;
+    }
     return;
 } 
 
@@ -590,6 +602,7 @@ int main(int argc, char *argv[]) {
     int path_mode = 0;
     initialize_goal();
     arm = new Arm();
+    /*
     MatrixXf J = arm->get_jacobian();
     cout << "J+" << endl;
     cout << pseudo_inv(J) << endl;
@@ -599,6 +612,7 @@ int main(int argc, char *argv[]) {
     
     
     arm->get_jacobian();
+    */
     material_list = new material[9];  
     for (int i = 0; i < 9; i++) { 
         material_list[i] = get_material();
@@ -612,7 +626,7 @@ int main(int argc, char *argv[]) {
     {   // because once object is draw then window is terminated
         display( window );
         update_goal(path_mode);
-        //arm->update_position(epsilon, step_size);
+        arm->update_position(epsilon, step_size);
         
         if (auto_strech){
             glfwSetWindowSize(window, mode->width, mode->height);
