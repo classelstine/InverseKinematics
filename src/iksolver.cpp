@@ -35,8 +35,8 @@ For UC Berkeley's CS184 Fall 2016 course, assignment 3 (Bezier surfaces)
 GLfloat translation[3] = {0.0f, 0.0f, 0.0f};
 GLfloat rotation[3] = {0.0f, 0.0f, 0.0f}; // Rotation of angle, axis_x, axis_y, axis_z
 bool auto_strech = false;
-int Width_global = 400;
-int Height_global = 400;
+int Width_global = 1000;
+int Height_global = 1000;
 int Z_buffer_bit_depth = 128;
 float step_size;
 bool wireframe_mode = false;
@@ -101,11 +101,12 @@ float Arm::update_position(float epsilon, float step_size) {
     
     float after_rotation_error = (end_effector - goal_position).norm();
     if (after_rotation_error > cur_error) {
-        arm->update_rotations(-1 * dr);
-        arm->calc_new_pi();
+        //arm->update_rotations(-1 * dr);
+        //arm->calc_new_pi();
     } else {
         cur_error = after_rotation_error;
     }
+    cur_error = after_rotation_error;
     return cur_error;
 } 
 
@@ -375,6 +376,12 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
             goal_position[2] = z;
             cout << "goal" << endl;
             print_vec_3(goal_position);
+            cout << "distance from origin to goal" << endl;
+            float dist = (arm->origin - goal_position).norm();
+            cout << dist << endl;
+            cout << "length of arm" << endl;
+            float arm_length = arm->get_total_length();
+            cout << arm_length << endl;
         } 
 }
 // ***********************
@@ -594,7 +601,8 @@ int main(int argc, char *argv[]) {
     
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(-3.5, 3.5, -3.5, 3.5, 5, -5);
+    //glOrtho(-3.5, 3.5, -3.5, 3.5, 5, -5);
+    glOrtho(-10, 10, -10, 10, 40, -40);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
