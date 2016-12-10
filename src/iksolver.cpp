@@ -42,6 +42,11 @@ float step_size;
 bool wireframe_mode = false;
 float epsilon;
 float zoom = 1;
+float box_size;
+float x_min;
+float x_max;
+float y_min;
+float y_max;
 material *material_list;
 
 Arm *arm;
@@ -365,13 +370,17 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+            get_resolution();
             double xpos, ypos;
             glfwGetCursorPos(window, &xpos, &ypos);
+            /*
             cout << "MOUSE CLICK" << endl;
             cout << xpos << " " << ypos << endl;
+            */
             //xpos and ypos is the position on the screen
 
             //The following is projecting them onto the screen
+        
             GLint viewport[4]; //var to hold the viewport info
             GLdouble modelview[16]; //var to hold the modelview info
             GLdouble projection[16]; //var to hold the projection matrix info
@@ -388,23 +397,36 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
             //get the world coordinates from the screen coordinates
             gluUnProject( win_x, win_y, win_z, modelview, projection, viewport, &world_x, &world_y, &world_z);
-
+            //cout << "VIEWPORT: " << viewport[0] << " "  << viewport[1] << " " <<  viewport[2] << " " <<  viewport[3]  << endl;
+            
             //Now update information we care about
+            
+            float origin_x = Width_global/2.0;
+            float origin_y = Height_global/2.0;
+            float x_ratio = (2 * x_max)/ Width_global;
+            float y_ratio = (2 * y_max)/ Height_global;
             float length = arm->get_total_length();
-            float x = (float) world_x;
-            float y = (float) world_y;
+            float x = (xpos - origin_x) * x_ratio;
+            float y = -1 * (ypos - origin_y) * y_ratio;
+            /*
+            cout << "origin x, y: " << origin_x << " " << origin_y << endl;
+            cout << "x and y ratio: " << x_ratio << " " << y_ratio << endl;
+            cout << "x y min and max: " << x_min << " " << y_min << " " << x_max << " " << x_max << endl;
+            cout << "final x, y: " << x << " " << y << endl;
+            */
+       
             float z = random_float_in_range((-1*length)/2, length/2) + arm->origin[2]; 
             goal_position[0] = x;
             goal_position[1] = y;
             goal_position[2] = z;
-            cout << "goal" << endl;
+            //cout << "goal" << endl;
             print_vec_3(goal_position);
-            cout << "distance from origin to goal" << endl;
+            //cout << "distance from origin to goal" << endl;
             float dist = (arm->origin - goal_position).norm();
-            cout << dist << endl;
-            cout << "length of arm" << endl;
+            //cout << dist << endl;
+            //cout << "length of arm" << endl;
             float arm_length = arm->get_total_length();
-            cout << arm_length << endl;
+            //cout << arm_length << endl;
         } 
 }
 // ***********************
@@ -617,7 +639,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     arm = new Arm();
-    float box_size = arm->get_total_length()*1.2;
+    box_size = arm->get_total_length()*1.2;
     
     glfwMakeContextCurrent( window );
     
@@ -628,7 +650,19 @@ int main(int argc, char *argv[]) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     //glOrtho(-3.5, 3.5, -3.5, 3.5, 5, -5);
-    glOrtho(-1*box_size, box_size, -1*box_size, box_size, 2*box_size, -2*box_size);
+    cout << "width global pre ortho initialize " << Width_global << endl;
+    cout << "height global pre ortho initialize " << Height_global << endl;
+    float width_ratio = (float) Width_global/((float) Width_global + (float) Height_global);
+    float height_ratio = (float) Height_global/((float) Width_global + (float) Height_global);
+    x_max = width_ratio*box_size;
+    x_min = -1*box_size*width_ratio;
+    y_max = height_ratio*box_size;
+    y_min = -1*height_ratio*box_size;
+    cout << "x_max " << x_max << endl;
+    cout << "x_min " << x_min << endl;
+    cout << "y_max " << y_max << endl;
+    cout << "y_min " << y_min << endl;
+    glOrtho(x_min, x_max, y_min, y_max, 2*box_size, -2*box_size);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
