@@ -2,7 +2,7 @@
 # Kayvon Fatahalian, Keenan Crane,
 # Sky Gao, Bryce Summers, Michael Choquette.
 cmake_minimum_required(VERSION 2.8)
-project(Assignment1)
+project(Assignment4)
 
 #-------------------------------------------------------------------------------
 # Build options
@@ -129,6 +129,10 @@ include_directories(glfw-3.2.1/include)
 # glew
 add_subdirectory(glew)
 include_directories(glew/include)
+
+# glm
+add_subdirectory(glm)
+include_directories(glm/glm)
 # set_property( TARGET glew APPEND_STRING PROPERTY COMPILE_FLAGS -w )
 
 #-------------------------------------------------------------------------------
@@ -145,4 +149,4 @@ add_subdirectory(src)
 #endif()
 
 # Install settings
-set(CMAKE_INSTALL_PREFIX "${Assignment1_SOURCE_DIR}/")
+set(CMAKE_INSTALL_PREFIX "${Assignment4_SOURCE_DIR}/")

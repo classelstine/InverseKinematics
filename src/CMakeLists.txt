@@ -31,9 +31,9 @@ link_directories(
 #-------------------------------------------------------------------------------
 # Add executable
 #-------------------------------------------------------------------------------
-add_executable(as3 ${APPLICATION_SOURCE})
+add_executable(as4 ${APPLICATION_SOURCE})
 
-target_link_libraries( as3
+target_link_libraries( as4
     glew ${GLEW_LIBRARIES}
     glfw ${GLFW_LIBRARIES}
     ${OPENGL_LIBRARIES}
@@ -45,7 +45,7 @@ target_link_libraries( as3
 # Platform-specific configurations for target
 #-------------------------------------------------------------------------------
 if(APPLE)
-  set_property( TARGET as3 APPEND_STRING PROPERTY COMPILE_FLAGS
+  set_property( TARGET as4 APPEND_STRING PROPERTY COMPILE_FLAGS
                 "-Wno-deprecated-declarations -Wno-c++11-extensions")
 endif(APPLE)
 
@@ -53,4 +53,4 @@ endif(APPLE)
 set(EXECUTABLE_OUTPUT_PATH ..)
 
 # Install to project root
-install(TARGETS as3 DESTINATION ${Assignment1_SOURCE_DIR})
+install(TARGETS as4 DESTINATION ${Assignment4_SOURCE_DIR})
