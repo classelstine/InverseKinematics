@@ -35,6 +35,7 @@ For UC Berkeley's CS184 Fall 2016 course, assignment 3 (Bezier surfaces)
 GLfloat translation[3] = {0.0f, 0.0f, 0.0f};
 GLfloat rotation[3] = {0.0f, 0.0f, 0.0f}; // Rotation of angle, axis_x, axis_y, axis_z
 bool auto_strech = false;
+bool goal_in_reach = true;
 int Width_global = 1000;
 int Height_global = 1000;
 int Z_buffer_bit_depth = 128;
@@ -92,6 +93,30 @@ void get_resolution() {
 
     Width_global = mode->width;
     Height_global = mode->height;
+}
+Arm::Arm(void) { 
+    new (this) Arm(4);
+} 
+
+Arm::Arm(int num_segs) { 
+        this->num_segments = num_segs;
+        this->origin = Vector3f(0.0,0.0,10.0); 
+        this->root = new Segment();  
+        Segment *curr = root;
+        float length;
+        for (int i = 0; i < num_segs-1; i++) { 
+            curr->world_pi = Vector3f(length,0.0,5.0);
+            length = random_float_in_range(1.0, 5.0);
+            curr->length = length;
+            Segment *child = new Segment();
+            curr->set_child(child);
+            curr = curr->child;
+        } 
+        //last one 
+        curr->world_pi = Vector3f(length,0.0,5.0);
+        length = random_float_in_range(1.0, 5.0);
+        curr->length = length;
+        this->calc_new_pi();
 }
 //****************************************************
 // A routine that updates the position of the end effector and 
@@ -301,11 +326,17 @@ Vector3f Arm::get_end_effector_world(void){
 
 float Arm::get_total_length(void) {
     float length = 0;
+    cout << "1" << endl;
     Segment *curr = this->root;
+    cout << "2" << endl;
     while(curr) { 
+        cout << "3" << endl;
         curr->world_pi = Vector3f(length,0.0,0.0);
+        cout << "4" << endl;
         length = curr->length + length;
+        cout << "5" << endl;
         curr = curr->child;
+        cout << "6" << endl;
     } 
     return length;
 }
@@ -323,6 +354,14 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
             if (action) {
                 if (mods == GLFW_MOD_SHIFT) {
                     goal_position[0] -= 1.0f;
+                    float dist = (arm->origin - goal_position).norm();
+                    float arm_length = arm->get_total_length();
+                    if (dist > arm_length) { 
+                        goal_in_reach = false;
+                    } 
+                    else { 
+                        goal_in_reach = true;
+                    } 
                 } else {
                     rotation[0] += 5.0f;
                 }
@@ -332,6 +371,14 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
             if (action) {
                 if (mods == GLFW_MOD_SHIFT){
                     goal_position[0] += 1.0f;
+                    float dist = (arm->origin - goal_position).norm();
+                    float arm_length = arm->get_total_length();
+                    if (dist > arm_length) { 
+                        goal_in_reach = false;
+                    } 
+                    else { 
+                        goal_in_reach = true;
+                    } 
                 } else {
                     rotation[0] -= 5.0f;
                 }
@@ -341,6 +388,14 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
             if (action) {
                 if (mods == GLFW_MOD_SHIFT) {
                     goal_position[1] += 1.0f;
+                    float dist = (arm->origin - goal_position).norm();
+                    float arm_length = arm->get_total_length();
+                    if (dist > arm_length) { 
+                        goal_in_reach = false;
+                    } 
+                    else { 
+                        goal_in_reach = true;
+                    } 
                 } else {
                     rotation[1] += 5.0f;
                 }
@@ -350,6 +405,14 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
             if (action) {
                 if (mods == GLFW_MOD_SHIFT) {
                     goal_position[1] -= 1.0f;
+                    float dist = (arm->origin - goal_position).norm();
+                    float arm_length = arm->get_total_length();
+                    if (dist > arm_length) { 
+                        goal_in_reach = false;
+                    } 
+                    else { 
+                        goal_in_reach = true;
+                    } 
                 } else {
                     rotation[2] += 5.0f;
                 }
@@ -427,6 +490,13 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
             //cout << "length of arm" << endl;
             float arm_length = arm->get_total_length();
             //cout << arm_length << endl;
+            if (dist > arm_length) { 
+                goal_in_reach = false;
+            } 
+            else { 
+                goal_in_reach = true;
+            } 
+            cout << arm_length << endl;
         } 
 }
 // ***********************
@@ -437,11 +507,11 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 void render(void) { 
     //now we need to render arm
     //Render Origin
-    float sphere_radius = 0.3;
+    float sphere_radius = 0.6;
     float slices = 32;
     float stacks = 32;
-    float base = 0.15;
-    float top = 0.15;
+    float base = 0.3;
+    float top = 0.3;
     int mat_idx = 0;
     // render the goal
     render_sphere(goal_position, sphere_radius * 0.5, slices, stacks, 0);
@@ -638,8 +708,22 @@ int main(int argc, char *argv[]) {
         glfwTerminate();
         return -1;
     }
-    arm = new Arm();
-    box_size = arm->get_total_length()*1.2;
+    if (argc == 1) {
+        arm = new Arm();
+        epsilon = 0.05f;
+        step_size = 0.1f;
+    } 
+    else if (argc == 2) { 
+        arm = new Arm(atoi(argv[1]));
+        epsilon = 0.05f;
+        step_size = 0.1f;
+    } 
+    else if (argc == 3) {  
+        arm = new Arm(atoi(argv[1]));
+        step_size = atof(argv[2]);
+        epsilon = 0.05f;
+    } 
+    float box_size = arm->get_total_length()*1.2;
     
     glfwMakeContextCurrent( window );
     
@@ -694,15 +778,15 @@ int main(int argc, char *argv[]) {
         material_list[i] = get_material();
     } 
      
-    epsilon = 0.05f;
-    step_size = 0.1f*3;
+    cout << "3" << endl;
 
 
     while( !glfwWindowShouldClose( window ) ) // infinite loop to draw object again and again
     {   // because once object is draw then window is terminated
         display( window );
-        update_goal(path_mode);
-        arm->update_position(epsilon, step_size);
+        if (goal_in_reach) { 
+            arm->update_position(epsilon, step_size);
+        } 
         
         if (auto_strech){
             glfwSetWindowSize(window, mode->width, mode->height);
