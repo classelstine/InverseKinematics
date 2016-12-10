@@ -129,6 +129,10 @@ include_directories(glfw-3.2.1/include)
 # glew
 add_subdirectory(glew)
 include_directories(glew/include)
+
+# glm
+add_subdirectory(glm)
+include_directories(glm/glm)
 # set_property( TARGET glew APPEND_STRING PROPERTY COMPILE_FLAGS -w )
 
 #-------------------------------------------------------------------------------

@@ -4,8 +4,8 @@
 #include <fstream>
 #include <cmath>
 #include <GL/glew.h> 
-#include <glm/vec3.hpp>
-#include <glm/glm.hpp>
+#include <vec3.hpp>
+#include <glm.hpp>
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
 #include <time.h>
@@ -351,6 +351,9 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
             glfwGetCursorPos(window, &xpos, &ypos);
             cout << "MOUSE CLICK" << endl;
             cout << xpos << " " << ypos << endl;
+            //xpos and ypos is the position on the screen
+
+            //The following is projecting them onto the screen
             GLint viewport[4]; //var to hold the viewport info
             GLdouble modelview[16]; //var to hold the modelview info
             GLdouble projection[16]; //var to hold the projection matrix info
@@ -367,6 +370,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
             //get the world coordinates from the screen coordinates
             gluUnProject( win_x, win_y, win_z, modelview, projection, viewport, &world_x, &world_y, &world_z);
+
+            //Now update information we care about
             float length = arm->get_total_length();
             float x = (float) world_x;
             float y = (float) world_y;
