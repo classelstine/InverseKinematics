@@ -82,6 +82,12 @@ void update_goal(int mode) {
     }
 }
 
+void get_resolution() {
+    const GLFWvidmode * mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+    Width_global = mode->width;
+    Height_global = mode->height;
+}
 //****************************************************
 // A routine that updates the position of the end effector and 
 // returns how far it is away from the goal position. 
@@ -267,12 +273,24 @@ void Arm::update_rotations(VectorXf dr) {
 } 
 
 Vector3f Arm::get_end_effector_local(void){
-    Vector3f end = root->child->child->child->local_pi;
+    //cout << "in get_local" << endl;
+    Segment *curr = this->root;
+    while(curr->child) { 
+        curr = curr->child;
+    } 
+    Vector3f end = curr->local_pi;
+    //cout << "finished get_local" << endl;
     return end;
 }
 
 Vector3f Arm::get_end_effector_world(void){
-    Vector3f end = root->child->child->child->world_pi;
+    //cout << "in get_world" << endl;
+    Segment *curr = this->root;
+    while(curr->child) { 
+        curr = curr->child;
+    } 
+    Vector3f end = curr->world_pi;
+    //cout << "finished get_world" << endl;
     return end;
 }
 
@@ -392,11 +410,11 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 void render(void) { 
     //now we need to render arm
     //Render Origin
-    float sphere_radius = 0.2;
+    float sphere_radius = 0.3;
     float slices = 32;
     float stacks = 32;
-    float base = 0.08;
-    float top = 0.08;
+    float base = 0.15;
+    float top = 0.15;
     int mat_idx = 0;
     // render the goal
     render_sphere(goal_position, sphere_radius * 0.5, slices, stacks, 0);
@@ -577,6 +595,7 @@ void print_seg(Segment *curr_seg) {
 int main(int argc, char *argv[]) {
     //This initializes glfw
     initializeRendering();
+    get_resolution();
     GLFWwindow* window = glfwCreateWindow( Width_global, Height_global, "CS184", NULL, NULL );
     if ( !window )
     {
@@ -592,6 +611,8 @@ int main(int argc, char *argv[]) {
         glfwTerminate();
         return -1;
     }
+    arm = new Arm();
+    float box_size = arm->get_total_length()*1.2;
     
     glfwMakeContextCurrent( window );
     
@@ -602,7 +623,7 @@ int main(int argc, char *argv[]) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     //glOrtho(-3.5, 3.5, -3.5, 3.5, 5, -5);
-    glOrtho(-10, 10, -10, 10, 40, -40);
+    glOrtho(-1*box_size, box_size, -1*box_size, box_size, 2*box_size, -2*box_size);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
@@ -617,7 +638,6 @@ int main(int argc, char *argv[]) {
     
     int path_mode = 0;
     initialize_goal();
-    arm = new Arm();
     /*
     MatrixXf J = arm->get_jacobian();
     cout << "J+" << endl;
@@ -629,13 +649,14 @@ int main(int argc, char *argv[]) {
     
     arm->get_jacobian();
     */
-    material_list = new material[9];  
-    for (int i = 0; i < 9; i++) { 
+    int segs_and_joints = arm->num_segments*2 + 1;
+    material_list = new material[segs_and_joints];  
+    for (int i = 0; i < segs_and_joints; i++) { 
         material_list[i] = get_material();
     } 
      
     epsilon = 0.05f;
-    step_size = 0.1f;
+    step_size = 0.1f*3;
 
 
     while( !glfwWindowShouldClose( window ) ) // infinite loop to draw object again and again

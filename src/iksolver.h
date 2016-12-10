@@ -32,6 +32,8 @@ class Segment {
         } 
 };
 
+float random_float_in_range(float a, float b);
+
 class Arm {
     public:
         Segment *root;
@@ -40,23 +42,31 @@ class Arm {
     void calc_new_pi(void); 
     //Default 4 segments
     Arm() { 
-        this->num_segments = 4;
+        this->num_segments = 8;
         root = new Segment();  
         origin = Vector3f(0.0,0.0,10.0); 
         Segment *child1 = new Segment();  
         Segment *child2 = new Segment();  
         Segment *child3 = new Segment();  
+        Segment *child4 = new Segment();  
+        Segment *child5 = new Segment();  
+        Segment *child6 = new Segment();  
+        Segment *child7 = new Segment();  
 
         root->set_child(child1);
         child1->set_child(child2);
         child2->set_child(child3);
+        child3->set_child(child4);
+        child4->set_child(child5);
+        child5->set_child(child6);
+        child6->set_child(child7);
        
         Segment *curr = root;
-        float length = 1;
+        float length;
         while(curr) { 
             curr->world_pi = Vector3f(length,0.0,5.0);
+            length = random_float_in_range(1.0, 5.0);
             curr->length = length;
-            length += 1;
             curr = curr->child;
         } 
         calc_new_pi();
@@ -90,5 +100,6 @@ Matrix3f cross_matrix(Vector3f);
 void print_seg(Segment *curr_seg);
 MatrixXf pseudo_inv(MatrixXf J);
 float random_float_in_range(float a, float b);
+void get_resolution();
 
 
